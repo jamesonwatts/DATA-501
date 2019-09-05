@@ -1,6 +1,8 @@
 ---
-title: "Class1"
+title: "Foundations of Data Science with R"
+author: "Jameson Watts, Ph.D."
 output:
+  ioslides_presentation: default
   beamer_presentation: default
 ---
 
@@ -8,19 +10,58 @@ output:
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## R Markdown
+## Agenda
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+1. Course Overview and Expectations
+2. Example Analysis of Wine Prices
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+# Course Overview and Expectations
 
-## Slide with Bullets
+## Contact Information
+- Email: jwatts\@willamette.edu
+- Office Hours: after class 
+- Appointments: jamesonwatts.youcanbook.me (Skype or phone call)
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+## Class Materials
 
-## Slide with R Output
+- [Base R](https://cran.r-project.org/)
+- [RStudio 1.2](https://www.rstudio.com/products/rstudio/download)
+- [R for Data Science](https://r4ds.had.co.nz)
+- [DataCamp Classroom](https://www.datacamp.com/groups/shared_links/526ee016c61b2912b2bbc7a2f7fd1f1cf1ea3d09)
+
+Other resources:
+
+- https://twitter.com/r4dscommunity
+- https://bookdown.org/yihui/rmarkdown
+- http://google.com
+
+## Reading the Course Outline
+
+- Class Topics
+  + Subjects I plan to cover during that day's lecture
+- Reading and Assignments
+  + DCC: assignments in the DataCamp Classroom
+  + R4ds: chapters to read in the online textbook
+  
+## Assignments
+- DataCamp homework assignments (25%)
+- Midterm exams (50%)
+- Final Presentations and Report (25%)
+
+## Course Policies and Expectations
+- Name tents
+- Collaboration
+- Late work
+- Effort
+  + 2-4 hours outside of class each week
+  + struggle, Google, struggle, doh!
+  + start with the basics... ramp up very fast
+
+# Analysis of wine prices
+
+## Dataset
+
+
 
 ```{r cars, echo = TRUE}
 summary(cars)
