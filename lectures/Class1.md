@@ -1,8 +1,10 @@
-Class1
+Foundations of Data Science with R
 ========================================================
-author: 
+author: Jameson Watts
 date: 
 autosize: true
+
+Course overview and example analysis
 
 First Slide
 ========================================================
