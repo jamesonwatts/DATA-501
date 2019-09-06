@@ -72,6 +72,8 @@ Other resources:
 ```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 library(tidyverse)
 wine <- as_tibble(read_csv('../resources/winemag-data.csv'))
+wine <- wine %>% 
+  rename(id=X1)
 ```
 
 ```{r}
@@ -110,4 +112,42 @@ wine  %>%
   filter(price < 200) %>% 
   ggplot(aes(x=price, fill=country)) +
   geom_density(alpha = 0.3)
+```
+## Wine ln(Prices) Density 
+```{r, echo=FALSE, warning=FALSE}
+wine  %>%
+  filter(country == "US" | country =="France" | country == "Italy") %>% 
+  ggplot(aes(x=log2(price), fill=country)) +
+  geom_density(alpha = 0.3)
+```
+
+
+## Means and Medians
+```{r, echo=FALSE, warning=FALSE}
+
+wine  %>%
+  filter(country == "US" | country =="France" | country == "Italy") %>%
+  ggplot(aes(x=country, y=log2(price))) + 
+    geom_boxplot() + 
+    coord_flip()
+```
+
+
+## Oregon vs. California vs. Bordeaux Ratings
+
+```{r, echo=FALSE, warning=FALSE}
+library(cowplot)
+
+prov_wine <- wine  %>%
+  filter(province == "Bordeaux" | province == "Oregon" | province == "California")
+
+p1<- ggplot(prov_wine, aes(x=province, y=points)) + 
+  geom_boxplot() + 
+  coord_flip()
+
+p2<- ggplot(prov_wine, aes(x=points, fill=province)) +
+  geom_density(alpha = 0.3)+
+  theme(legend.position = c(0.8, 0.8))
+
+plot_grid(p1,p2)
 ```
