@@ -3,5 +3,5 @@
 *.aux
 *.synctex.*
 *.Rproj
-*.Rhistory
+.Rhistory
 .Rproj.user
