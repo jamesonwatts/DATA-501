@@ -3,7 +3,6 @@ title: "Foundations of Data Science with R"
 author: "Jameson Watts, Ph.D."
 output:
   ioslides_presentation: default
-  beamer_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -54,22 +53,46 @@ Other resources:
 - Late work
 - Effort
   + 2-4 hours outside of class each week
-  + struggle, Google, struggle, doh!
+  + struggle, Google, StackExchange, struggle, Google, doh!
   + start with the basics... ramp up very fast
 
 # Analysis of wine prices
 
-## Dataset
+## Overview of Data
 
+- Grabbed from Kaggle [here](https://www.kaggle.com/zynicide/wine-reviews/)
+- Scrape of wine reviews, scores, and prices from Wine Enthusiast during week of 6/15/2017
+- Includes region, taster's name, variety and winery
+- 130k observations
+- Some background reading [here](https://www.vivino.com/wine-news/how-much-does-a-good-bottle-of-wine-cost)
 
+## Summarize Dataset
 
-```{r cars, echo = TRUE}
-summary(cars)
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+library(tidyverse)
+wine <- as_tibble(read_csv('../resources/winemag-data.csv'))
 ```
 
-## Slide with Plot
+```{r}
+glimpse(wine)
+```
+
+## Possible Research Questions
+
+- What is the mean rating and cost of a bottle of red wine? 
+  + What is the median? 
+  + What about white wine?
+- Is wine from the Willamette Valley more or less expensive than wine from elsewhere?
+  + Against which regions do we have a comparative advantage?
+  + Where are we at a disadvantage?
+- Do the most prolific tasters have a preference for a certain region or type of wine?
+- What is the relationship between rating and price? Are there confounds?
+- Are there certain words always associated with the highest rated wine?
+- Which wines are a 'good' deal?
+
+## Wine Prices
 
 ```{r pressure}
-plot(pressure)
+
 ```
 

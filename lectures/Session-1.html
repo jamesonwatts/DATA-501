@@ -4,7 +4,6 @@
   <title>Foundations of Data Science with R</title>
 
   <meta charset="utf-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
   <meta name="generator" content="pandoc" />
 
@@ -258,7 +257,6 @@ background: black;
 }
 
 slides > slide {
-display: none;
 font-family: 'Open Sans', Arial, sans-serif;
 font-size: 26px;
 color: #797979;
@@ -279,17 +277,19 @@ transition: all 0.6s ease-in-out;
 }
 
 slides > slide.far-past {
-display: none;
 }
 
 slides > slide.past {
-display: block;
 opacity: 0;
 }
 
 slides > slide.current {
 display: block;
 opacity: 1;
+z-index: 1;
+}
+slides > slide:not(.current) {
+z-index: 0;
 }
 
 slides > slide.current .auto-fadein {
@@ -304,13 +304,11 @@ background-size: 100% 100%;
 }
 
 slides > slide.next {
-display: block;
 opacity: 0;
 pointer-events: none;
 }
 
 slides > slide.far-next {
-display: none;
 }
 
 slides > slide.dark {
@@ -382,8 +380,6 @@ width: 1100px;
 
 slides.layout-widescreen > slide.far-past,
 slides.layout-faux-widescreen > slide.far-past {
-display: block;
-display: none;
 -webkit-transform: translate(-2260px);
 -moz-transform: translate(-2260px);
 -ms-transform: translate(-2260px);
@@ -417,8 +413,6 @@ pointer-events: none;
 
 slides.layout-widescreen > slide.far-next,
 slides.layout-faux-widescreen > slide.far-next {
-display: block;
-display: none;
 -webkit-transform: translate(2260px);
 -moz-transform: translate(2260px);
 -ms-transform: translate(2260px);
@@ -1349,6 +1343,13 @@ opacity: 1;
 
 .overview .slide-area {
 display: none;
+}
+slides > slide {
+background: linear-gradient(#ffffff, #ffffff 85%, #e6e6e6);
+background-color: white;
+}
+slides > slide {
+opacity: 0;
 }
 @media print {
 
@@ -3094,6 +3095,10 @@ if (document.readyState !== "loading" &&
       transition: opacity 0.6s ease-in 0.4s;
       opacity: 0;
     }
+/* https://github.com/ropensci/plotly/pull/524#issuecomment-468142578 */
+slide:not(.current) .plotly.html-widget{
+  display: block;
+}
 
   </style>
 
@@ -3186,17 +3191,45 @@ if (document.readyState !== "loading" &&
 </ul></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Slide with R Output</h2></hgroup><article  id="slide-with-r-output">
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Analysis of wine prices</h2></hgroup><article  id="analysis-of-wine-prices">
 
-<pre class = 'prettyprint lang-r'>summary(cars)</pre>
+</article></slide><slide class=""><hgroup><h2>Overview of Data</h2></hgroup><article  id="overview-of-data">
 
-<pre >##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00</pre>
+<ul>
+<li>Grabbed from Kaggle <a href='https://www.kaggle.com/zynicide/wine-reviews/' title=''>here</a></li>
+<li>Scrape of wine reviews, scores, and prices from Wine Enthusiast during week of 6/15/2017</li>
+<li>Includes region, taster’s name, variety and winery</li>
+<li>130k observations</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Summarize Dataset</h2></hgroup><article  id="summarize-dataset">
+
+<pre >## Observations: 129,971
+## Variables: 14
+## $ X1                    &lt;dbl&gt; 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, …
+## $ country               &lt;chr&gt; &quot;Italy&quot;, &quot;Portugal&quot;, &quot;US&quot;, &quot;US&quot;, &quot;US&quot;, &quot;Sp…
+## $ description           &lt;chr&gt; &quot;Aromas include tropical fruit, broom, bri…
+## $ designation           &lt;chr&gt; &quot;Vulkà Bianco&quot;, &quot;Avidagos&quot;, NA, &quot;Reserve L…
+## $ points                &lt;dbl&gt; 87, 87, 87, 87, 87, 87, 87, 87, 87, 87, 87…
+## $ price                 &lt;dbl&gt; NA, 15, 14, 13, 65, 15, 16, 24, 12, 27, 19…
+## $ province              &lt;chr&gt; &quot;Sicily &amp; Sardinia&quot;, &quot;Douro&quot;, &quot;Oregon&quot;, &quot;M…
+## $ region_1              &lt;chr&gt; &quot;Etna&quot;, NA, &quot;Willamette Valley&quot;, &quot;Lake Mic…
+## $ region_2              &lt;chr&gt; NA, NA, &quot;Willamette Valley&quot;, NA, &quot;Willamet…
+## $ taster_name           &lt;chr&gt; &quot;Kerin O’Keefe&quot;, &quot;Roger Voss&quot;, &quot;Paul Gregu…
+## $ taster_twitter_handle &lt;chr&gt; &quot;@kerinokeefe&quot;, &quot;@vossroger&quot;, &quot;@paulgwine …
+## $ title                 &lt;chr&gt; &quot;Nicosia 2013 Vulkà Bianco  (Etna)&quot;, &quot;Quin…
+## $ variety               &lt;chr&gt; &quot;White Blend&quot;, &quot;Portuguese Red&quot;, &quot;Pinot Gr…
+## $ winery                &lt;chr&gt; &quot;Nicosia&quot;, &quot;Quinta dos Avidagos&quot;, &quot;Rainsto…</pre>
+
+</article></slide><slide class=""><hgroup><h2>Research Questions</h2></hgroup><article  id="research-questions">
+
+<ul>
+<li>Is wine from the Willamette Valley more or less expensive than wine from elsewhere?</li>
+<li>Do the most prolific tasters have a preference for a certain region or type of wine?</li>
+<li>What is the relationship between rating and price? Are there confounds?</li>
+<li>Are there certain words always associated with the highest rated wine?</li>
+<li>Which wines are a &lsquo;good&rsquo; deal?</li>
+</ul>
 
 </article></slide><slide class=""><hgroup><h2>Slide with Plot</h2></hgroup><article  id="slide-with-plot">
 
