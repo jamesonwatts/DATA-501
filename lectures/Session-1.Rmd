@@ -36,6 +36,7 @@ Other resources:
 
 ## Reading the Course Outline
 
+- From the [syllabus](https://github.com/jamesonwatts/GSMDS-5001/blob/master/syllabus/syllabus.pdf)
 - Class Topics
   + Subjects I plan to cover during that day's lecture
 - Reading and Assignments
@@ -90,9 +91,23 @@ glimpse(wine)
 - Are there certain words always associated with the highest rated wine?
 - Which wines are a 'good' deal?
 
-## Wine Prices
+## Wine Prices (< $200) Histogram
 
-```{r pressure}
-
+```{r, echo=FALSE, warning=FALSE}
+wine  %>%
+  filter(country == "US" | country =="France" | country == "Italy") %>% 
+  filter(price < 200) %>% 
+  ggplot(aes(x=price)) +
+  geom_histogram(bins = 20) +
+  facet_wrap(~ country, scales = "free")
 ```
 
+## Wine Prices (< $200) Density 
+
+```{r, echo=FALSE, warning=FALSE}
+wine  %>%
+  filter(country == "US" | country =="France" | country == "Italy") %>% 
+  filter(price < 200) %>% 
+  ggplot(aes(x=price, fill=country)) +
+  geom_density(alpha = 0.3)
+```
