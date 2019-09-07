@@ -270,4 +270,5 @@ get_regression_table(lmo)
 
 What are the percent increases in price for each point by region?
 
+# Questions?
  
