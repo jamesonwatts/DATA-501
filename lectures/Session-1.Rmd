@@ -267,8 +267,17 @@ Oregon
 ```{r}
 get_regression_table(lmo)
 ```
-
 What are the percent increases in price for each point by region?
+
+## Cabernet or Rose?
+```{r}
+wine %>% 
+  filter(variety == "Rosé" | variety == "Cabernet Sauvignon") %>% 
+  ggplot(aes(x=points, y=log2(price)))+
+  geom_point(shape=1, alpha=0.5)+
+  geom_smooth(method = lm) +
+  facet_wrap(~ variety, scales="fixed")
+```
 
 # Questions?
  
