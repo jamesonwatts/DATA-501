@@ -2,8 +2,9 @@
 title: "Foundations of Data Science with R"
 author: "Jameson Watts, Ph.D."
 output:
-  beamer_presentation: 
-classoption: "aspectratio=169"
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -222,12 +223,12 @@ Okay, so the relationship is a bit clearer. But also, there is definitely some v
 ## Simple linear model
 
 ```{r}
-lm1 <- lm(log(price) ~ points, wine)
+lm1 <- lm(lprice ~ points, wine %>% mutate(lprice = log(price)))
 summary(lm1)
-pct <- (exp(coef(lm1)["x"]) - 1) * 100 
+pct = (exp(coef(lm1)["points"]) - 1) * 100
 ```
 
-Since we logged the DV, a 1 point ratings increase = ``r pct``\% increase in price on average. Note: $$ (e^x-1)*100 $$
+Since we logged the DV, a 1 point ratings increase = ``r round(pct,2)``\% increase in price on average. Note: $$ (e^x-1)*100 $$
 
 
 ## Ratings x ln(price) by Region
@@ -266,5 +267,7 @@ Oregon
 ```{r}
 get_regression_table(lmo)
 ```
+
+What are the percent increases in price for each point by region?
 
  
