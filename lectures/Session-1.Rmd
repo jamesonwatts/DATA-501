@@ -2,11 +2,12 @@
 title: "Foundations of Data Science with R"
 author: "Jameson Watts, Ph.D."
 output:
-  ioslides_presentation: default
+  beamer_presentation: 
+classoption: "aspectratio=169"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
 ```
 
 ## Agenda
@@ -16,10 +17,17 @@ knitr::opts_chunk$set(echo = FALSE)
 
 # Course Overview and Expectations
 
-## Contact Information
-- Email: jwatts\@willamette.edu
-- Office Hours: after class 
-- Appointments: jamesonwatts.youcanbook.me (Skype or phone call)
+## About Me
+- Background
+  + BS in Computer Science from UC, Boulder
+  + MBA from Willamette
+  + Ph.D. in Marketing from U of A (minor in computational linguistics)
+  + ~10 years programming professionally + ~10 years programming for research
+- Contact
+  + Website [jamesonwatts.github.io](https://jamesonwatts.github.io/)
+  + Email: [jwatts\@willamette.edu](mailto:jwatts@willamette.edu)
+  + Office Hours: after class 
+  + Appointments: [jamesonwatts.youcanbook.me](jamesonwatts.youcanbook.me) (Skype or phone call)
 
 ## Class Materials
 
@@ -69,7 +77,7 @@ Other resources:
 
 ## Summarize Dataset
 
-```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+```{r, results='hide'}
 library(tidyverse)
 wine <- as_tibble(read_csv('../resources/winemag-data.csv'))
 wine <- wine %>% 
@@ -82,9 +90,7 @@ glimpse(wine)
 
 ## Possible Research Questions
 
-- What is the mean rating and cost of a bottle of red wine? 
-  + What is the median? 
-  + What about white wine?
+- What is the mean/median rating and cost of a bottle of red wine? 
 - Is wine from the Willamette Valley more or less expensive than wine from elsewhere?
   + Against which regions do we have a comparative advantage?
   + Where are we at a disadvantage?
@@ -95,7 +101,7 @@ glimpse(wine)
 
 ## Wine Prices (< $200) Histogram
 
-```{r, echo=FALSE, warning=FALSE}
+```{r}
 wine  %>%
   filter(country == "US" | country =="France" | country == "Italy") %>% 
   filter(price < 200) %>% 
@@ -113,11 +119,12 @@ wine  %>%
   ggplot(aes(x=price, fill=country)) +
   geom_density(alpha = 0.3)
 ```
-## Wine ln(Prices) Density 
+
+## Wine log(Prices) Density 
 ```{r, echo=FALSE, warning=FALSE}
 wine  %>%
   filter(country == "US" | country =="France" | country == "Italy") %>% 
-  ggplot(aes(x=log2(price), fill=country)) +
+  ggplot(aes(x=log(price), fill=country)) +
   geom_density(alpha = 0.3)
 ```
 
@@ -127,13 +134,13 @@ wine  %>%
 
 wine  %>%
   filter(country == "US" | country =="France" | country == "Italy") %>%
-  ggplot(aes(x=country, y=log2(price))) + 
+  ggplot(aes(x=country, y=log(price))) + 
     geom_boxplot() + 
     coord_flip()
 ```
 
 
-## Oregon vs. California vs. Bordeaux Ratings
+## Oregon vs. California vs. Bordeaux (Ratings)
 
 ```{r, echo=FALSE, warning=FALSE}
 library(cowplot)
@@ -151,3 +158,113 @@ p2<- ggplot(prov_wine, aes(x=points, fill=province)) +
 
 plot_grid(p1,p2)
 ```
+
+Ok, all pretty quality. How do we compare with Texas?
+
+## Oregon vs. Texas (Ratings)
+
+```{r, echo=FALSE, warning=FALSE}
+library(cowplot)
+
+prov_wine <- wine  %>%
+  filter(province == "Texas" | province == "Oregon")
+
+p1<- ggplot(prov_wine, aes(x=province, y=points)) + 
+  geom_boxplot() + 
+  coord_flip()
+
+p2<- ggplot(prov_wine, aes(x=points, fill=province)) +
+  geom_density(alpha = 0.3)+
+  theme(legend.position = c(0.8, 0.8))
+
+plot_grid(p1,p2)
+```
+
+...thank goodness. Let's get back to the relationship between ratings and price.
+
+## Ratings and Price
+
+```{r, echo=FALSE, warning=FALSE}
+
+wine %>% 
+  ggplot(aes(x=points, y=price))+
+  geom_point(shape=1, alpha=0.5)
+
+```
+
+So perhaps we can start to see what is a 'good' deal and what isn't. Let's look at the crazy outliers.
+
+## Who are the crazy outliers? (price > 1000)
+```{r}
+library(kableExtra)
+
+crazy_wine <- wine %>% 
+  filter(price > 1000) %>% 
+  select(points,price,country,province,title) %>% 
+  arrange(desc(price))
+
+crazy_wine
+# kable(crazy_wine, format.args = list(decimal.mark = ","))
+```
+
+
+...so there's something going on with the French Bordeaux region. We should keep this in mind when we model price. But let's get back to price/ratings relationship...
+
+## Ratings x log(price)
+```{r, echo=FALSE, warning=FALSE}
+wine %>% 
+  ggplot(aes(x=points, y=log(price)))+
+  geom_point(shape=1, alpha=0.5)
+```
+
+Okay, so the relationship is a bit clearer. But also, there is definitely some variance. Let's first get an estimate of the slope and then see if things are different by region.
+
+## Simple linear model
+
+```{r}
+lm1 <- lm(log(price) ~ points, wine)
+summary(lm1)
+pct <- (exp(coef(lm1)["x"]) - 1) * 100 
+```
+
+Since we logged the DV, a 1 point ratings increase = ``r pct``\% increase in price on average. Note: $$ (e^x-1)*100 $$
+
+
+## Ratings x ln(price) by Region
+
+```{r, echo=FALSE, warning=FALSE}
+
+wine %>% 
+  filter(province == "Bordeaux" | province == "Oregon" | province == "California") %>% 
+  ggplot(aes(x=points, y=log2(price)))+
+  geom_point(shape=1, alpha=0.5)+
+  geom_smooth(method = lm) +
+  facet_wrap(~ province, scales="fixed")
+```
+
+...so the slopes look different. Let's actually run a model to see if they are.
+
+
+## Linear models for each province
+
+```{r}
+lmb <- lm(log(price) ~ points,wine %>% filter(province == "Bordeaux"))
+lmc <- lm(log(price) ~ points,wine %>% filter(province == "California"))
+lmo <- lm(log(price) ~ points,wine %>% filter(province == "Oregon"))
+
+library(moderndive)
+```
+Bordeaux
+```{r}
+get_regression_table(lmb)
+```
+California
+```{r}
+get_regression_table(lmc)
+```
+Oregon
+```{r}
+get_regression_table(lmo)
+```
+
+ 
