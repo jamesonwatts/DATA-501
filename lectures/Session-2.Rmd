@@ -1,0 +1,378 @@
+---
+title: "Intro to R, Markdown and the Tidyverse"
+author: "Jameson Watts, Ph.D."
+output:
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Agenda
+
+1. The R programming environment
+2. RMarkdown
+3. Intro to Tidyverse
+
+*Strong suggestion:* download some [cheat sheets](https://www.rstudio.com/resources/cheatsheets/)
+
+# The R programming environment
+
+## What is R?
+
+- R is a software environment for statistical computing and graphics.
+- It is also a programming language
+  + Variables (of different types)
+  + Structures
+  + Functions
+  + Syntax
+
+## Using RStudio
+
+- *Console:* where you can execute code
+- *Source file:* create and save scripts, which get sent to the console
+- *Comments:* document what you are doing
+- *Environment:* a snapshot of the current state of affairs
+- *Help:* lookup how to do stuff
+- *Packages:* bundles of code written by others
+
+## Exercise 
+
+Open RStudio and:
+
+1.  Create a new R script
+2.  Create a comment that explains what you are doing
+3.  Compute the solution to 2*(28-7)
+4.  Run the script
+
+## Solution
+
+```{r}
+# Math is fun!
+2*(28-7)
+```
+
+## Exercise 
+
+1. Edit your R script to assign the solution to 2*(28-7) to a variable
+2. Multiply your variable by 42 and then take the square root
+3. Display the answer
+
+*Hint:* use `sqrt()`
+
+## Solution
+
+```{r}
+# Math is fun!
+s <- 2*(28-7)
+s <- s*42
+sqrt(s)
+```
+
+
+## Functions
+
+Input &rarr; Function &rarr; Output
+
+```{r}
+# Exponentiate a number and assign to a variable
+s <- exp(42)
+s
+
+# Take the log of this variable and display it
+log(s)
+```
+
+## Packages 
+
+- A package is a collection of functions, documentation, and sometimes data
+- There are a number of packages that are part of base R
+- You can install other packages from CRAN
+- Not all packages are created equal
+
+*Note:* The functions **exp()** and **log()** are part of Base R
+
+## Excercise
+
+1. Install the tidyverse package
+2. load tidyverse into memory
+
+## Solution
+
+```{r}
+# install.packages('tidyverse')
+library(tidyverse)
+```
+
+# RMarkdown
+
+## The what and why of RMarkdown
+
+RMarkdown is a file format that allows you to embed your code directly within your report.
+
+**Why is this important?**
+
+## Preamble
+
+To begin, you need to specify they type of document you want and set some options... 
+
+...you need to write some YAML
+
+```
+---
+ title: "Intro to R, Markdown and the Tidyverse"
+ author: "Jameson Watts, Ph.D."
+ output:
+  ioslides_presentation:
+    widescreen: yes
+---
+
+{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+...but luckily this is all pretty much done for you when you create a new RMarkdown file in RStudio.
+
+## Formatting
+
+```
+Plain text
+
+# header 1
+## header 2
+### header 3 etc.
+
+an equation $ y = mx + b $
+
+image: ![caption]("pathtofile.png")
+
+url: [link text](http://address.com)
+
+> block quote
+
+*italics*
+
+**bold**
+```
+
+## Formatting cont'd
+
+```
+superscript^2^
+
+- unordered list
+- next item
+  + some subitems
+  + subitem 2
+  
+1. unordered list
+2. next item
+  + some subitems
+  + subitem 2
+  
+Table header | Column 2 header
+-------------|--------------
+cell 1       | cell 2
+cell 3       | cell 4
+
+```
+
+## Code Evaluation
+
+**Chunk it**  
+
+\```{r eval=FALSE, cache=FALSE}  
+
+\# here is a comment  
+my_var <- 42  
+my_var
+
+\```
+
+**Inline**  
+
+My favorite variable is: 
+```{r, results='asis', echo=FALSE}
+cat("`` `r my_var` ``")
+```
+
+
+
+## Code Chunk Options
+
+- eval
+- echo
+- warning
+- error
+- message
+- cache
+- fig.width
+- fig.height
+
+...and so much more can be found [here](https://rmarkdown.rstudio.com/)
+
+## Exercise: Reproduce the output of this slide
+
+### Some rad markdown
+*Note:* Using **markdown** is an **easy** way to marry analysis with report writing.  
+
+The advantages are:
+
+1. Simple, output-agnostic formatting
+2. Reproducible results
+3. Easy for others to follow your analysis
+
+Example analysis:
+```{r}
+my_var <- exp(log(42))
+```
+
+*Note^2^:* It is also cool because I can embed R code inline. For instance, the value of my_var is `r my_var`.
+
+# Intro to the Tidyverse
+
+## Philosophy
+
+An 'opinionated' collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures.
+
+- readr – importing data 
+- dplyr – manipulating data 
+- tidyr – cleaning data 
+- ggplot2 – visualizing data
+
+...more are being added regularly
+
+## Importing data (pair up and follow along)
+
+1. Goto [jamesonwatts.github.io](https://jamesonwatts.github.io/), scroll down to the teaching section and click on the GSMDS Class link
+2. Find the resources folder and download the [wine-data.csv](https://github.com/jamesonwatts/GSMDS-5001/blob/master/resources/winemag-data.csv) file
+3. Create a new R code chunk in your RMD file and add the following:
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(tidyverse)
+wine <- read_csv("../resources/winemag-data.csv")
+```
+
+## Data Frames
+
+```{r, warning=FALSE}
+wine <- read_csv("../resources/winemag-data.csv")
+```
+
+## Rectangular data
+
+- All columns are variables
+- All rows are observations
+- Each cell is a value
+
+```{r}
+head(wine,5)
+```
+
+*Note:* you can also open data files within RStudio just like in Excel
+
+## Let's take a glimpse instead
+
+```{r}
+glimpse(wine)
+```
+
+## Or a skim
+```{r, message=FALSE}
+#install.packages("skimr")
+library(skimr)
+skim(wine)
+```
+
+
+## The Pipe
+
+Starting with a dataset, you can use the pipe operator to perform operations in series.
+
+For instance, I can filter the dataset to only show wines from Oregon
+
+```{r}
+wine %>% 
+  filter(province=="Oregon")
+```
+
+## Multiple Filters
+
+...or I can filter the data so that I only have wines from Oregon that are over $100
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  filter(price > 100) 
+```
+
+## Exercise
+
+### Find only the wines with variety "Pinot Gris" that cost less than $10
+
+## Answer
+```{r}
+wine %>% 
+  filter(variety=="Pinot Gris") %>% 
+  filter(price<10) 
+```
+
+why do I put quotes around "Pinot Gris" but not around the price?
+
+## Combining functions
+
+You can also combine functions using the pipe operator. 
+
+```{r}
+wine %>% 
+  filter(variety=="Chardonnay") %>% 
+  filter(province=="Oregon") %>% 
+  arrange(desc(points), price)
+```
+
+## Filtered summary of select variables
+Let's summarize the data from the last slide by combining filter with skim and select
+
+```{r}
+wine %>% 
+  filter(variety=="Chardonnay") %>% 
+  filter(province=="Oregon") %>%
+  select(price, points) %>% 
+  skim()
+```
+
+
+
+## Long exercise
+
+1. Gather into 4 teams
+2. Assign one person to "drive"
+3. Create a new RMD file using the default HTML output format
+4. Suggest some Oregon wines in the region of...
+  + Eola-Amity Hills
+  + Dundee Hills
+  + Chehalem Mountains
+  + Umpqua Valley
+
+Email me the resulting html file with your marked up analysis. Don't forget to justify your recommendations!
+
+## Summary
+
+- R is a programming language (in all its glory and ugliness)
+- RMarkdown makes beautiful, reproducible, data science documents
+- The Tidyverse is a philosophy (and set of packages) for data science in R
+
+## Bonus
+###Beautiful tables with kable
+```{r}
+wine %>% 
+  filter(variety=="Chardonnay") %>% 
+  filter(province=="Oregon") %>% 
+  arrange(desc(points), price) %>% 
+  select(points, price, province, region_1, title) %>% 
+  head(5) %>% 
+  knitr::kable(padding=0)
+```
+
