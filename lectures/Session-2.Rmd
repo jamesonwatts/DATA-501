@@ -2,9 +2,10 @@
 title: "Intro to R, Markdown and the Tidyverse"
 author: "Jameson Watts, Ph.D."
 output:
+  beamer_presentation: default
   ioslides_presentation:
-    widescreen: true
-    smaller: true
+    smaller: yes
+    widescreen: yes
 ---
 
 ```{r setup, include=FALSE}
