@@ -1,0 +1,396 @@
+---
+title: "Tidy Data and Summarization"
+author: "Jameson Watts, Ph.D."
+output: 
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Agenda
+
+1. Review (and upgrade) 
+2. Tame and tidy data
+3. Data Summarization
+
+```{r, include=FALSE}
+library(tidyverse)
+wine <- read_csv("../resources/winemag-data.csv")
+```
+
+# Review
+
+## Filter, arrange, and select
+
+### Load the wine dataset and output a tibble of...
+1. Pinot Noir 
+2. from Oregon
+3. in descending order by points,
+4. and ascending order by price,
+5. that only shows points, price and title
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>%
+  filter(variety=="Pinot Noir") %>% 
+  arrange(desc(points), price) %>% 
+  select(points, price, title)
+```
+
+## Summarize
+
+### What are the mean price and points for Oregon Pinot Noir?
+
+*Hint:* Use skim()
+
+## Solution
+
+```{r, message=FALSE}
+library(skimr)
+wine %>% 
+  filter(province=="Oregon") %>%
+  filter(variety=="Pinot Noir") %>% 
+  arrange(desc(points), price) %>% 
+  select(points, price) %>% 
+  skim()
+```
+
+## Next level...
+
+- and ('&') vs. or ('|')
+- not ('!') and not equal ('!=')
+- top_n() and top_frac()
+
+### Use logical operators and the top_n function to find...
+1. the top 10 French or Italian wines by price.
+2. showing only points, price and title 
+3. arranged by points descending.
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(country=="France" | country=="Italy") %>% 
+  top_n(10,price) %>% 
+  arrange(desc(points)) %>% 
+  select(points, price, title)
+```
+
+## More practice
+
+### Use logical operators and the top_n function to find... 
+1. the top 5 Oregon wines by points 
+2. that aren't Chardonnay
+3. Showing only points, price and title
+4. arranged by price ascending.
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  filter(variety!="Chardonnay") %>% 
+  top_n(5,points) %>% 
+  arrange(price) %>% 
+  select(points, price, title)
+```
+
+- Why are there more than 5 rows? 
+
+## Even more practice
+
+### Use logical operators and top_frac functions to find... 
+1. the top 5% by points
+2. of Oregon wines
+3. that are neither Pinot Noir nor Chardonnay
+4. Showing only points, price and title
+5. arranged by points descending and price ascending.
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  filter(variety != "Pinot Noir" & variety != "Chardonnay") %>% 
+  top_frac(.01,points) %>% 
+  select(points, price, title) %>%
+  arrange(desc(points), price)
+```
+
+# Tame and tidy data
+
+## Philosophy (review)
+
+- Tame data is data with understandable column names and well-formatted values
+- Tidy data is data with:
+  + Each variable must have its own column
+  + Each observation must have its own row
+  + Each value must have its own cell
+
+```{r, out.width = "600px", echo=FALSE}
+knitr::include_graphics("images/tidy.png")
+```
+
+
+This is often the difference between data that is considered "long" and data that is considered "wide."
+
+*Image credit:* https://rstudio-pubs-static.s3.amazonaws.com/396363_adaf67178eab4bd793bd9dd17dda70b3.html
+
+
+
+## Different data types
+
+\*Each column must contain values of the **SAME** type
+
+- Numeric (integers, fractions)
+- Character (Words)
+- Factor (Categories)
+- Date (also includes time)
+- Logical (true or false, 1 or 0)
+
+See [here](https://b-rodrigues.github.io/modern_R/data-types-and-objects.html) for more information.
+
+## New dataframes
+
+So far, we've been piping operations from a single dataframe. But what if you want to save the result for later?
+
+```{r}
+wine_oregon <- wine %>% 
+  filter(province=="Oregon")
+
+wine_oregon
+```
+
+## Spread and Gather
+
+These are functions to reshape your data. Let's first summarize the wine data by country and save it to a new dataframe
+
+```{r}
+wine_country <- wine %>% 
+  filter(variety=="Cabernet Sauvignon" | variety=="Chardonnay" | variety=="Pinot Gris" | variety =="Syrah") %>% 
+  group_by(country, variety) %>% 
+  summarize(points = mean(points))
+
+wine_country
+```
+
+*Note:* Don't stress about the group_by and summarize functions. I'll get to that.
+
+## Spread (from long to wide)
+
+Now let's spread it out so that I've got one column for each variety of wine
+```{r}
+wine_wide <- wine_country %>% 
+  spread(variety, points)
+wine_wide
+```
+
+## Gather (from wide to long)
+
+Then gather it back up into the original
+```{r}
+wine_long <- wine_wide %>% 
+  gather("variety", "points", 2:5)
+
+wine_long
+```
+
+Why are there more rows than the original?
+
+# Data summarization
+
+## Basics
+
+Data summarization involves
+
+- Describing data with numerical summaries
+- Visualizing data with graphical summaries
+
+...however, there is a difference in how we describe the data depending on whether it is
+
+- discrete, or
+- continuous
+
+## Describing discrete data
+
+```{r}
+wine %>% 
+  count(country)
+```
+## A 'tidy' pivot table
+```{r}
+wine %>% 
+  count(country, variety)
+```
+## Exercise
+
+### Use filter and count to figure out which country has more Chardonnay, France or the US.
+
+## Solution
+```{r}
+wine %>% 
+  filter(country=="France" | country=="US") %>% 
+  filter(variety=="Chardonnay") %>% 
+  count(country)
+```
+
+
+## Visualization basics
+
+### ggplot2 requires the following:
+1. Data – Data to visualize.
+2. Aesthetics – Mapping graphical elements to data.
+3. Geometries – Or “geom,” the graphic representing the data.
+
+## Visualizing discrete data
+
+```{r}
+wine %>% 
+  filter(country=="France" | country=="US") %>% 
+  filter(variety=="Chardonnay") %>% 
+  ggplot(aes(x=country)) +
+    geom_bar()
+```
+
+## Let's try a more complicated count
+```{r}
+wine %>% 
+  filter(province=="Washington" | province=="Oregon" | province=="California") %>% 
+  filter(variety=="Cabernet Sauvignon" | variety =="Syrah" | variety=="Pinot Noir") %>% 
+  ggplot(aes(x=province, fill=variety)) +
+    geom_bar()
+```
+
+## Exercise
+
+### Create a stacked bar graph that shows
+
+1. A count of wines
+2. with greater than 97 points
+3. from California, Oregon and Washington
+4. stacked by variety
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(points >= 98) %>% 
+  filter(province=="Washington" | province=="Oregon" | province=="California") %>%
+  ggplot(aes(x=province, fill=variety)) +
+    geom_bar()
+```
+
+## Describing continuous data
+
+You can use the summarize function for calculating things like mean, median, variance, min/max, etc.
+
+```{r}
+wine %>% 
+  summarize(avg_points=mean(points))
+```
+
+## Visualizing a continuous distribution
+
+Of course that's not very exciting. Let's graph the distribution of points.
+
+```{r, message=FALSE}
+wine %>% 
+  ggplot(aes(x=points)) +
+    geom_histogram()
+```
+
+## Visualizing two continuous variables
+
+...or the relationship between points and price
+
+```{r, warning=FALSE}
+wine %>% 
+  ggplot(aes(x=points, y=log(price))) +
+  geom_point()
+```
+
+## Combining discrete and continuous variables
+
+Somtimes, we want to summarize by a category
+
+```{r}
+wine %>% 
+  filter(country=="US") %>%
+  filter(!is.na(price)) %>% 
+  group_by(province) %>% 
+  summarize(
+    count = n(),
+    average_points=mean(points),
+    average_price=mean(price)) %>% 
+  filter(count>100) %>% 
+  arrange(desc(average_points))
+```
+
+*Note:* the count() function used previously is just a wrapper around summarize(count=n())
+
+## Exercise
+
+### Create a tibble that shows
+
+1. US wines
+2. grouped by province and variety,
+3. summarized on count and max price
+4. with a count greater than 100
+5. sorted by count descending
+
+*Hint:* don't forget to filter out the 'NA' prices
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(country=="US") %>%
+  filter(!is.na(price)) %>% 
+  group_by(province, variety) %>% 
+  summarize(
+    count = n(),
+    max_price=max(price)) %>% 
+  filter(count>100) %>% 
+  arrange(desc(count))
+```
+
+## Visualizing discrete and continuous
+
+Sometimes we want to visualize a continuous variable by category as a boxplot
+
+```{r, warning=FALSE}
+wine %>% 
+  filter(province=="California" | province=="Oregon" | province=="Washington") %>%
+  ggplot(aes(x=province, y=log(price))) +
+    geom_boxplot()
+```
+
+## Visualizing discrete and continuous (cont'd)
+
+...or as a density function
+
+```{r, warning=FALSE}
+wine %>% 
+  filter(province=="California" | province=="Oregon" | province=="Washington") %>%
+  ggplot(aes(x=log(price), fill=province)) +
+    geom_density(alpha = 0.4)
+
+```
+
+## Long exercise
+
+### Gather in groups of 3ish and...
+
+1. Choose a driver
+2. Choose a country
+3. Summarize the wine data from that country (numerically and visually)
+4. Write comments about what you find in the markdown
+5. Make sure "echo=FALSE" on your chunks
+6. Knit to HTML and email me the file.
