@@ -1,0 +1,397 @@
+---
+title: "Data Wrangling"
+author: "Jameson Watts, Ph.D."
+# output: html_document
+output:
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+wine <- read_csv("../resources/winemag-data.csv") %>% 
+  filter(!is.na(price))
+```
+
+## Agenda
+
+1. Review (and upgrade) 
+2. Joining together
+3. Mutation 
+4. Strings
+5. Bringing it all together
+
+# Review
+
+## Group_by() 
+
+The group_by() function doesn't actually do anything visible to a dataframe.
+
+Grouping by province shows the same data as...
+```{r}
+wine %>% 
+  group_by(province)
+```
+
+## Group_by()
+
+...grouping by both province and variety.
+```{r}
+wine %>% 
+  group_by(province, variety)
+```
+
+## Group_by() with summarize()
+
+However, the grouping function sets things up in the background for your summary operations.
+
+```{r}
+wine %>% 
+  summarize('avg. price'=mean(price))
+```
+
+```{r}
+wine %>% 
+  group_by(country) %>% 
+  summarize('avg. price'=mean(price)) %>% 
+  head(5)
+```
+
+## Exercise
+
+### What are the top five varieties in Argentinia by points?
+
+*Hint:* Use filter(), group_by(), summarize() and top_n() to find your answer
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(country=="Argentina") %>% 
+  group_by(variety) %>% 
+  summarize(
+    'avg_points' = mean(points)
+    ) %>% 
+  top_n(5,avg_points) %>% 
+  arrange(desc(avg_points))
+```
+
+## Advanced summarize()
+
+### Each call to summarize removes one level of grouping.
+
+Note that by running summarize twice, I am back to the results from the previous slide.
+
+```{r}
+wine %>% 
+  filter(country=="Argentina") %>% 
+  group_by(variety, winery) %>% 
+  summarize(points = mean(points)) %>% 
+  summarize('avg_points' = mean(points)) %>% 
+  top_n(5,avg_points) %>% 
+  arrange(desc(avg_points))
+```
+
+## Exercise
+
+1. If needed, open the help file on dplyr::summarize()
+2. use summarize() with n_distinct() 
+3. to find the number of unique wineries in Argentina
+
+## Solution
+
+```{r}
+wine %>% 
+  filter(country=="Argentina") %>% 
+  summarize(winery_count=n_distinct(winery))
+
+wine %>% 
+  filter(country=="Argentina") %>% 
+  count(winery)
+```
+
+# Joining Together
+
+## Relational data
+
+![](images/relational-nycflights.png)
+
+## Definitions
+
+### **Primary keys:** uniquely identifies row in its own dataframe
+
+### **Foreign keys:** uniquely identifies row in another dataframe
+
+## Joining up with World Bank data
+
+```{r, message=FALSE}
+pop <- read_csv("../resources/population.csv")
+pop
+```
+
+## Let's gather, then start with the most recent year
+
+```{r, message=FALSE}
+pop <- read_csv("../resources/population.csv") %>% 
+  gather(key="year", value = "population", 3:61) %>% 
+  rename("country"="Country Name") 
+  
+pop2017 <- pop %>% 
+  filter(year==2017) %>% 
+  select(country, population)
+
+pop2017
+```
+
+## Try joining with wine on country
+```{r, message=FALSE}
+wine_pop <- wine %>% 
+  inner_join(pop2017) %>% 
+  select(country, population, title)
+
+wine_pop
+```
+
+But wait... we started with over 120k observations and now we're down to 66k?
+
+## Did we get everything?
+
+ Let's try this again.
+
+```{r, message=FALSE}
+wine_pop <- wine %>% 
+  left_join(pop2017) %>% 
+  select(country, population, title)
+
+wine_pop 
+```
+
+...hmmm looks like the US isn't matching. But we'll come back to that.
+
+## Types of joins
+
+- Mutating
+  + inner_join()
+  + left_join()
+  + right_join()
+  + full_join()
+- Filtering
+  + semi_join()
+  + anti_join()
+
+What would be the result if I performed an anti_join() with my wine and population dataframes?
+
+## Anti_join
+
+```{r, message=FALSE}
+wine %>% 
+  anti_join(pop2017) 
+```
+
+
+# Mutation
+
+## Mutation for new variables
+
+The function mutate() from dplyr allows you to create new variables from existing ones.
+
+```{r}
+wine %>% 
+  mutate(lprice=log(price)) %>% 
+  select(price, lprice)
+```
+
+
+## Grouped mutation
+
+You can also mutate by group. For instance, let's say you wanted to standardize prices by variety
+
+```{r, fig.height=3}
+wine %>% 
+  group_by(variety) %>% 
+  mutate(npoints = (points-mean(points)) / sd(points)) %>%
+  filter(variety == "Riesling" | variety == "Cabernet Sauvignon") %>% 
+  ggplot(aes(npoints, fill=variety))+
+    geom_density(alpha=0.3)
+```
+
+## Conditional mutation
+
+Let's change that pesky 'US' identifier to 'United States' 
+
+```{r}
+wine <- wine %>%
+  mutate(country=ifelse(country=="US","United States",country))
+wine
+```
+
+# Strings
+
+## String basics
+```{r}
+library(stringr)
+
+name <- "Jameson Watts"
+name
+
+quote <- '"As soon as you stop wanting something, you get it." - Andy Warhol'
+quote
+
+writeLines(quote)
+```
+
+
+## String Operations
+
+```{r}
+str_length(quote)
+name_quote <- str_c("Name: ", name, "\nQuote: ", quote)
+writeLines(name_quote)
+```
+
+## Other common string functions
+```{r}
+str_sub(name_quote,10,30)
+str_to_lower(name_quote)
+str_locate(name_quote,"Jameson")
+```
+
+## Regular expressions
+
+```{r}
+library(htmlwidgets)
+str_detect(name_quote, "on Wa")
+str_detect(name_quote, "on wa")
+str_view_all(name_quote, "ou")
+```
+
+## More complicated Regex
+
+Placeholders and Repetition
+
+- . maches any character
+- \* matches 0 or more
+- \+ matches 1 or more
+- ? matches 0 or 1
+
+Anchors
+
+- ^ matches start of string
+- $ matches end of string
+
+Character classes
+
+- \\d matches any digit.
+- \\s matches any whitespace (e.g. space, tab, newline).
+- [abc] matches a, b, or c.
+- [^abc] matches anything except a, b, or c.
+
+
+## Some examples
+
+```{r}
+str_view_all(name_quote, "a.+s")
+
+wine %>% 
+  filter(str_detect(variety,"[Cc]abernet")) %>% 
+  select(points, price, variety) %>% 
+  arrange(desc(price))
+```
+
+## Exercise
+
+1. Use filter() and str_detect() to 
+2. find all Oregon wines 
+3. with the words 'espresso' and 'black currant' in their description
+4. showing variety, price, points and winery
+
+
+*Note:* these sorts of queries can tax your computer
+
+## Solution
+```{r}
+wine %>% 
+  filter(str_detect(description,"[Ee]spresso") & str_detect(description,"[Bb]lack currant")) %>% 
+  select(variety, price, points, winery) %>% 
+  arrange(desc(points), price)
+```
+
+
+# Bringing it all together
+
+## Combining with mutate
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  mutate(fruity = str_detect(description,"[Ff]ruity")) %>% 
+  ggplot(aes(points, fill=fruity))+
+    geom_density(alpha=.5)
+```
+
+## Extracting year from title
+```{r}
+wine <- wine %>% 
+  mutate(year = str_extract(title,"(\\d{4})"))
+
+wine %>% 
+  select(title, year)
+```
+
+## Graphing points by year
+
+```{r, fig.height=3}
+wine %>% 
+  filter(province=="Oregon") %>%
+  filter(variety=="Pinot Noir" | variety=="Chardonnay" | variety=="Pinot Gris") %>%
+  filter(year >= 1995) %>% 
+  group_by(year, variety) %>% 
+  summarize(avg_points = mean(points)) %>% 
+  ggplot(aes(x=as.integer(year), y=avg_points, color=variety)) +
+    geom_line()
+  
+```
+
+
+## Joining on more than one column
+
+Now that we've extracted year from the title, we can do a join on both country and year
+
+```{r, message=FALSE, fig.height=3, fig.width=5}
+wine %>% 
+  left_join(pop) %>% 
+  filter(!is.na(population) & !is.na(year)) %>%
+  filter(population < 1000000000) %>% 
+  group_by(country,year) %>% 
+  summarize(population=mean(population),price = mean(price)) %>% 
+  ggplot(aes(x=log(population), y=log(price))) +
+    geom_jitter(alpha=.1)+
+    geom_smooth(method = lm)
+```
+
+## Long Exercise
+
+1. Go to https://data.worldbank.org/indicator
+2. Find some cool country data
+3. Merge it with the wine data
+4. Decide on research question
+5. Draw a cool graph that answers the question
+
+## Bonus: joining with yourself
+
+```{r, message=FALSE}
+top_wineries <- wine %>% 
+  group_by(winery) %>% 
+  summarize(
+    avg_points=mean(points),
+    count=n()) %>% 
+  filter(count > 10) %>% 
+  top_frac(.05,avg_points) %>% 
+  left_join(wine)
+
+top_wineries
+```
+
