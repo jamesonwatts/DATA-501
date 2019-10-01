@@ -314,6 +314,7 @@ wine %>%
 ## Solution
 ```{r}
 wine %>% 
+  filter(province=="Oregon") %>% 
   filter(str_detect(description,"[Ee]spresso") & str_detect(description,"[Bb]lack currant")) %>% 
   select(variety, price, points, winery) %>% 
   arrange(desc(points), price)
