@@ -1,0 +1,256 @@
+---
+title: "Summarize and Plot"
+author: "Jameson Watts, Ph.D."
+date: "10/3/2019"
+# output: html_document
+output:
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+library(tidyverse)
+```
+
+## Agenda
+
+1. Expectations for the mid-term
+2. Review (and upgrade) 
+3. Visualization techniques
+
+# Mid-term
+
+## Expectation and format
+
+1. 45 minutes of review
+2. 120 minutes to complete
+3. Must be submitted as both Rmd file and knitted HTML
+4. Open everything (notes, book, internet)... except communication
+5. Questions will get progressively more difficult
+
+# Review
+
+## Joining, Mutation, and Strings
+
+First things first, let's load in my new data on monthly rainfall and take a look. What do you notice?
+```{r, warning=FALSE, message=FALSE}
+rain <- read_csv("../resources/rainfall.csv")
+rain
+```
+
+## Tidyr 1.0.0
+
+Tidyr has replaced spread() and gather() with pivot_wider() and pivot_longer(). I encourage you to read about the developments [here](https://www.tidyverse.org/articles/2019/09/tidyr-1-0-0/).
+
+```{r}
+rain %>% 
+  rename("year"="Year") %>% 
+  pivot_longer(-year,names_to = "month", values_to = "rainfall")
+```
+
+## Exercise
+
+1. Load in the wine data
+2. Get rid of prices that are NA
+3. Only keep Oregon wines
+4. Extract the year from the title (as numeric)
+5. Join with rainfall data
+6. Pivot longer
+
+## Solution
+
+*Note:* See [here](https://github.com/batpigandme/tidyexplain/tree/pivot) for an intuitive tutorial on joins.
+
+```{r}
+wine <- read_csv("../resources/winemag-data.csv") %>% 
+  filter(!is.na(price)) %>%
+  filter(province=="Oregon") %>% 
+  mutate(year = as.numeric(str_extract(title,"(\\d{4})"))) %>% 
+  left_join(rain, by=c("year"="Year")) %>% 
+  pivot_longer(16:27,names_to = "month", values_to = "rainfall")
+
+wine %>% 
+  select(title, month, year, rainfall)
+```
+
+## Skills upgrade: all about case_when()
+
+Sometimes you want to do a bunch of if/else in your mutate all at once.
+
+```{r, eval=FALSE}
+wine %>% 
+  mutate(month_number =
+    case_when(
+      month=="Jan" ~ 1,
+      month=="Feb" ~ 2,
+      month=="Mar" ~ 3,
+      month=="Apr" ~ 4,
+      month=="May" ~ 5,
+      month=="Jun" ~ 6,
+      month=="Jul" ~ 7,
+      month=="Aug" ~ 8,
+      month=="Sep" ~ 9,
+      month=="Oct" ~ 10,
+      month=="Nov" ~ 11,
+      month=="Dec" ~ 12,
+    )
+  )
+```
+
+## Exercise
+
+1. Partner up and choose a driver 
+2. Use case_when() and/or str_detect() with regular expressions
+3. To create a new variable called "character"
+4. With values of 'tart,' 'spicy,' 'bold' and 'cherry' 
+5. For Oregon wines with those terms in their description
+6. Then plot the density of log(price) by character
+
+*Hint:* you may want to pivot_wider() first
+
+## Solution (code)
+
+```{r}
+wine <- wine %>%
+  pivot_wider(names_from = month, values_from = rainfall) %>% 
+  mutate(character=
+    case_when(
+      str_detect(description,"[Tt]art") ~ 'tart',
+      str_detect(description,"[Sp]icy") ~ 'spicy',
+      str_detect(description,"[Bb]old") ~ 'bold',
+      str_detect(description,"[Cc]herry") ~ 'cherry'
+    )
+  ) 
+```
+
+## Solution (graph)
+
+```{r}
+wine %>% 
+  filter(!is.na(character)) %>% 
+  ggplot(aes(log(price), fill=character))+
+    geom_density(alpha=.7)
+```
+
+
+
+# Visualization basics
+
+## Overview
+
+- Aesthetics
+  + x = 
+  + y =
+  + fill = 
+  + color =
+- Geometry
+  + Line plots
+  + Bar plots
+  + Histograms
+  + Violin plots
+
+## Types of plots
+
+- Line and scatter
+  + geom_point()
+  + geom_jitter()
+  + geom_line()
+- Bar
+  + geom_bar()
+  + geom_col()
+- Histograms
+  + geom_histogram()
+  + geom_density()
+- Box
+  + geom_box()
+  + geom_voilin()
+
+
+## Scatter plot example
+```{r}
+wine %>% 
+  filter(year>1995) %>% 
+  filter(!is.na(character)) %>% 
+  ggplot(aes(x=year, y=points, color=character)) +
+    geom_jitter()
+```
+
+## Bar plot example
+```{r}
+wine %>% 
+  filter(!is.na(character)) %>% 
+  ggplot(aes(character))+
+    geom_bar()
+```
+
+## Exercise
+
+Plot the counts of each character of wine between 1995 and 2015
+
+## Solution
+
+```{r, fig.height=3}
+wine %>% 
+  filter(year>1995 & year <= 2015) %>%
+  filter(!is.na(character)) %>% 
+  group_by(year,character) %>% 
+  summarise(char_cnt=n()) %>% 
+  ggplot(aes(year,char_cnt, color=character))+
+    geom_line()
+```
+
+## Histogram example
+
+```{r}
+wine %>% 
+  ggplot(aes(price))+
+    geom_histogram()
+```
+
+## Violin Plots
+```{r}
+wine %>% 
+  filter(!is.na(character)) %>% 
+  ggplot(aes(character,log(price), color=character))+
+    geom_violin()
+```
+
+
+## Long Exercise
+
+Use any of the techniques that you've learned thus far to answer the following:
+
+*Is there a relationship between rainfall and wine quality in Oregon?*
+
+## One simple solution (and some bonus code)
+
+```{r}
+rains <- rain %>%
+  rename("year"="Year") %>% 
+  pivot_longer(-year,names_to = 'month',values_to = 'rainfall') %>% 
+  mutate(rainfall=ifelse(is.na(rainfall),0,rainfall)) %>%
+  filter(month %in% c('May','Jun','Jul','Aug','Sep')) %>% #note the %in% operator
+  group_by(year) %>% 
+  summarise(summer_rain=sum(rainfall))
+
+wines <- wine %>% 
+  filter(points > 88) %>% 
+  group_by(year) %>% 
+  summarize(avg_price=mean(price), avg_points=mean(points)) %>% 
+  left_join(rains)
+```
+
+## And a graph
+
+
+```{r}
+wines %>% 
+  ggplot(aes(log(summer_rain),avg_points))+
+    geom_point()+
+    geom_smooth(method = lm)
+```
+
+
+
