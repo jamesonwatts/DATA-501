@@ -178,7 +178,7 @@ read_csv("../resources/rainfall.csv") %>%
   mutate(rainfall=if_else(is.na(rainfall),0,rainfall)) %>% 
   group_by(Year) %>% 
   summarise(rainfall=mean(rainfall)) %>% 
-  filter(Year > 1995) %>% 
+  filter(Year >= 1995) %>% 
   ggplot(aes(Year,rainfall))+
     geom_col()
 ```

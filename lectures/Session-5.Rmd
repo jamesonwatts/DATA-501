@@ -1,8 +1,6 @@
 ---
 title: "Summarize and Plot"
 author: "Jameson Watts, Ph.D."
-date: "10/3/2019"
-# output: html_document
 output:
   ioslides_presentation:
     smaller: yes
