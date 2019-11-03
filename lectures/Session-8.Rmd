@@ -1,0 +1,409 @@
+---
+title: "Multiple Regression and Diagnostics"
+author: "Jameson Watts, Ph.D."
+output:
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE, fig.height = 4)
+setwd("~/GDrive/teaching/GSMDS-5001/")
+options("kableExtra.html.bsTable" = T)
+options(knitr.table.format = "html") 
+library(tidyverse)
+library(moderndive)
+library(kableExtra)
+d <- read_csv("resources/ab-data.csv")
+```
+
+## Agenda
+
+1. A/B Testing Review (and upgrade)
+2. Multiple Regression
+3. Interactions and Uplift Modeling
+3. Regression Diagnostics
+
+## But first...
+
+```{r, echo=FALSE}
+squiggly <- function(x) sin(5*x)/200
+eyes <- data.frame(x=c(-2.5,1), y=c(0.06,0.063))
+mouth <- data.frame(x=-0.3,y=0.04)
+
+ggplot(mapping = aes(x=c(-10,10))) +
+  geom_area(stat="function", fun=squiggly, fill="white") +
+  geom_area(stat="function", fun=dnorm, fill="white",
+            args=list(mean=0, sd=4)) +
+  geom_point(data=eyes, aes(x=x, y=y), size=15) +
+  geom_point(data=mouth, aes(x=x, y=y), size = 11) +
+  labs(title= "Happy Halloween") + xlab("Paranormal Distribution") + ylab(" ")
+
+# adapted from Zach Dyne who adapted from Felipe Sanchez: https://twitter.com/FelipeSanchezB/status/1057711174232539137
+```
+
+# A/B testing review (and upgrade)
+
+## What did we learn last time?
+
+1. Randomization checks
+2. Difference in proportions
+3. Difference in means
+4. How to calculate sample size (power)
+
+## Randomization checks
+
+```{r, warning=FALSE}
+d %>% filter(past_purch > 0) %>% 
+ggplot(aes(x=last_purch, fill=group)) + 
+  geom_histogram(binwidth = 25, alpha=0.2, position="identity") +
+  xlim(0, 500) + 
+  xlab("Last Purchase") + ylab("Customers") + 
+  labs(title="Distribution of purchase recency by group")
+```
+
+## Testing differences in proportions
+
+For categorical outcomes
+```{r}
+success <- d %>% 
+  filter(group!="ctrl") %>% 
+  group_by(group,click) %>% 
+  count() %>% 
+  filter(click==1)
+trials <- d %>% 
+  filter(group!="ctrl") %>% 
+  count(group)
+
+prop.test(success$n,trials$n)
+```
+
+## Testing differences in means 
+
+For continuous variables
+```{r}
+d <- d %>% 
+  mutate(email = group %in% c("email_B","email_A"))
+t.test(purch ~ email, data=d)
+```
+
+## (Upgrade) experiments within experiments
+
+- Consider the customers who have made a purchase in the last 60-ish days.  
+- Within that subset, customers were randomly assigned to recieve email A, email B or no email.  
+- So, we can analyze the data for a subgroup as it's own test by slicing down and then re-analyzing.
+- However, we will only have enough sample in the subgroup if our initial test is big enough.
+
+## Exercise
+
+1. Create a new variable called 'recent' that equals 1 (TRUE) if last_purch < median(last_purch)
+2. create bar graphs that show the difference in 1) opens, and 2) clicks 
+3. by the newly created variable
+
+
+## Solution opens
+
+```{r}
+d <- d %>% mutate(recent=(last_purch<summary(d$last_purch)[['Median']]))
+d %>%
+  filter(group != "ctrl") %>% 
+  ggplot(aes(x=recent, fill=as.factor(open)))+
+    geom_bar()
+```
+
+## Solution clicks
+```{r}
+d %>%
+  filter(group != "ctrl") %>%
+  ggplot(aes(x=recent, fill=as.factor(click)))+
+    geom_bar()
+```
+
+## Exercise
+
+**Question:** Does the email campaign have more of an effect on the purchases of recent shoppers? If so, what is the difference?
+\
+\
+*Hint:* Start by creating a new variable called 'email' that equals 1 if group != 'ctrl'
+
+## Solution
+
+```{r}
+d <- d %>% mutate(email = (group!="ctrl"))
+d %>%
+  group_by(recent, email) %>% 
+  summarise(purchases = mean(purch), opens=mean(open), clicks=mean(click)) %>% 
+  knitr::kable() %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover"))
+
+```
+\
+Looks like emails increase purchases by about \$2 for recent shoppers, but only about \$1 for aged shoppers.
+
+## Testing the difference for aged
+```{r}
+t.test(purch ~ email, data=d %>% filter(!recent))
+```
+
+## Testing the difference for recent
+```{r}
+t.test(purch ~ email, data=d %>% filter(recent))
+```
+
+## We slice based on baseline variables
+
+Anyone who keeps historic data on customers or visitors has lots of baseline variables available for slicing and dicing:   
+
+- website visits (to particular parts of the site)
+- sign-ups
+- geographic location
+- source
+- past purchase (by category)
+- recency
+- frequency
+
+
+## Exercise
+
+**Question:** Does the email campaign have more of an effect on the behavior of those that purchased syrah in the past?
+```{r}
+summary(d$syrah > 0)
+```
+
+## Solution (table)
+
+```{r}
+d %>%
+  group_by(syrah>0, email) %>% 
+  summarise(purchases = mean(purch), opens=mean(open), clicks=mean(click)) %>% 
+  kable() %>% 
+  kable_styling(full_width = TRUE, bootstrap_options = c("striped", "hover"))
+```
+
+
+## Repeated significance testing
+Slicing and dicing means you will run many significance tests. 
+
+You may remember from intro stats that 1 in 20 significance tests at 95% confidence will be significant, when there is no effect. You will get false positives, especially when slicing and dicing. 
+
+When you think you've found a golden ticket, re-test before betting the company.
+
+
+## Slicing and dicing: Summary
+Slicing and dicing will reveal two things about subgroups of customers. 
+
+1. Subgroups will vary in how much they engage in behaviors
+    - Recent buyers tend to have higher average purchases in the future
+   
+2. Subgroups vary in how they respond to treatments
+    - Recent buyers are more affected by the email
+
+
+# Multiple regression
+
+## Heterogeneous treatment effects
+"Experiments are used because they provide credible estimates of the effect of an intervention for a sample population. But underlying this average effect for a sample may be **substantial variation in how particular respondents respond to treatments**: there may be **heterogeneous treatment effects**."  
+
+-- Athey and Imbens, 2015
+
+## Heterogeneous treatment effects and targeting
+Businesses should be interested in heterogeneous treatment effects when there is opportunity to apply different treatments to each subgroup (ie targeting).
+
+email -> high potential for targeting  
+
+website -> less potential for targeting
+
+## Analyzing experiments with regression 
+We use a **regression model** to define a relationship between the response ($y$) and the treatment ($x$). 
+
+$y = a + b \times x + \varepsilon$
+
+The model literally says that we get the average response by multiplying the treatment indicator ($x$) by $b$ and adding that to $a$. When we fit a model, we use data to estimate $a$ and $b$. 
+
+In R, we can shorthand the model equation with an R formula: 
+
+```{r}
+m1 <- lm(purch ~ email, data=d)
+get_regression_table(m1)
+```
+
+
+## Regression versus significance test {.smaller}
+```{r}
+get_regression_table(m1)
+```
+```{r}
+t.test(purch ~ email, data=d, var.equal=TRUE)
+```
+
+
+## Regression versus significance tests 
+If you like regression, you can use regression to analyze all your tests. 
+
+If you don't like regression, you should try it because it gives you the ability to pull in baseline variables. This is sometimes called "regression correction."
+
+## Model including baseline variables
+```{r}
+m2 <- lm(purch ~ email + recent, data=d)
+get_regression_table(m2)
+```
+Aged customers in the control group purchased on average \$5.69 in the 30-days after the email was sent. Recent customers in the control group purchased an additional \$13.26. The average effect of the email was \$1.45. 
+
+
+## Model with continuous baseline variable
+
+```{r}
+lm(purch ~ email + last_purch, data=d) %>% 
+  get_regression_table()
+```
+
+Adding covariates increases the likelihood of finding significant effects. Why?
+
+# Interactions and uplift modeling
+
+## Incorporating heterogeneous treatment effects
+To incorporate heterogeneous treatment effects, we need an **interaction** between the treatment effect ($x$) and a baseline variable ($z$). 
+
+When we interact two terms, we are defining a model that multiplies the two terms: 
+
+$y = a + b x + c  z + d (x  z) + \varepsilon$
+
+The R formula for this model is: 
+
+`purch ~ email + recent + email:recent`
+
+...or...
+
+`purch ~ email*recent`  
+
+## Incorporating heterogeneous treatment effects
+```{r}
+m3 <- lm(purch ~ email + recent + email:recent, data=d)
+get_regression_table(m3)
+```
+The email effect is \$0.93 for aged customers plus an additional \$1.04 for newer customers (total of \$1.99). 
+
+## An uplift model for purchase amount
+An uplift model is a regression model that incorporates many baseline variables. 
+```{r}
+m4 <- lm(purch ~ email*recent + email*(past_purch > 50) + email*(visits > 3) +
+                 email*(chard > 0) + email*(sav_blanc>0) + email*(syrah>0) + email*(cab>0), 
+         data=d)
+get_regression_table(m4)
+```
+
+
+## Scoring customers with an uplift model
+If you have someone who wasn't in the test, but you know their baseline variables, you can use an uplift model to predict likely treatment effect. 
+```{r}
+new_cust <- slice(d,5) %>% select(chard, sav_blanc,syrah, cab, past_purch,recent,visits)
+new_cust 
+```
+
+
+```{r}
+(pred <- predict(m4, cbind(email=c(TRUE, FALSE), new_cust)))
+(lift <- pred[1] - pred[2])
+```
+This random customer is predicted to buy \$29.74 if they get an email or \$26.18 without, for a uplift of \$3.55. 
+
+## Scoring for another (worse) customer
+```{r}
+new_cust <- slice(d,25) %>% select(chard, sav_blanc,syrah, cab, past_purch,recent,visits)
+new_cust
+```
+
+
+```{r}
+(pred <- predict(m4, cbind(email=c(TRUE, FALSE), new_cust)))
+(lift <- pred[1] - pred[2])
+```
+
+
+## Why uplift modeling? 
+If treatments are costly (eg catalogs, discounts), then we should target customers that we predict will have a positive effect that exceeds costs.
+
+
+# Regression diagnostics
+
+## Sum of squared residuals
+
+1. Find the residuals (error terms)
+2. Square them
+3. Add them all up
+
+```{r}
+### <b>
+d <- d %>% mutate(lpurch=log(purch+1))
+### </b>
+m <- lm(lpurch ~ email*recent, data=d)
+get_regression_points(m) %>% 
+  mutate(sq_residuals = residual^2) %>%
+  summarize(ssr = sum(sq_residuals))
+```
+
+
+## R-squared
+
+$R^2=1-\frac{var(resid)}{var(y)}$
+
+*Definition:* the proportion of the total variation in the outcome variable y that the model explains.
+\
+\
+**Why is var(y) guaranteed to be >= var(residuals)?**
+\
+\
+*Note:* $var(s^2)=\frac{\sum(x_i-\bar{x})^2}{n-1}$
+
+
+## RMSE
+
+1. **E**rror = residuals
+2. **S**quare each error
+3. **M**ean of that squared error
+4. **R**oot of that mean squared error
+
+### Roughly, the quality of a model's predictions
+
+## Example
+
+```{r}
+m <- lm(lpurch ~ email*recent, data=d)
+get_regression_summaries(m)
+```
+
+## Cross Validation - test/train
+
+Creating the train and test sets
+```{r}
+
+# Randomly shuffle order of rows:
+d_shuffled <- d %>% 
+  sample_frac(size = 1, replace = FALSE)
+# Split into train and test:
+train <- d_shuffled %>%
+  slice(1:100000)
+test <- d_shuffled %>%
+  slice(100001:123988)
+
+m <- lm(log(purch+1) ~ email*recent, data=train)
+get_regression_table(m)
+```
+
+## Cross Validation - validate
+
+```{r}
+get_regression_points(m, newdata = test) %>% 
+  mutate(sq_residuals = residual^2) %>%
+  summarize(rmse = sqrt(mean(sq_residuals)))
+```
+
+
+## Bonus: Continuous by categorical interactions
+
+```{r}
+c <- lm(purch ~ email*last_purch, data=d)
+get_regression_table(c)
+```
+
