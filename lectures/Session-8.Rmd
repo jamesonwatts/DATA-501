@@ -234,7 +234,7 @@ get_regression_table(m1)
 get_regression_table(m1)
 ```
 ```{r}
-t.test(purch ~ email, data=d, var.equal=TRUE)
+t.test(purch ~ email, data=d)
 ```
 
 

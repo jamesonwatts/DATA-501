@@ -31,6 +31,22 @@ wtxt <- wine %>%
 
 west_coast <- c("Washington","Oregon","California")
 pinots <- c("Burgundy","California","Oregon")
+
+library(wesanderson)
+jameson <- function(){
+  list(
+    theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    ),
+    scale_color_manual(values = wes_palette(n=10, name="Moonrise3", type = "continuous")),
+    scale_fill_manual(values = wes_palette(n=10, name="Moonrise3", type = "continuous"))
+  )
+}
 ```
 
 
@@ -52,7 +68,8 @@ wine %>%
   filter(province %in% west_coast) %>%
   filter(variety %in% top_5) %>% 
   ggplot(aes(x=province, fill=variety)) +
-    geom_bar()
+  geom_bar()+
+  jameson()
 ```
 
 ## Wines at 98 points or higher on the west coast
@@ -61,7 +78,8 @@ wine %>%
   filter(points >= 98) %>%
   filter(province %in% west_coast) %>%
   ggplot(aes(x=province, fill=variety)) +
-geom_bar()
+  geom_bar()+
+  jameson()
 ```
 
 ## Oregon's Top wines 
@@ -89,14 +107,14 @@ wtxt %>%
     mutate(proportion = n / sum(n)) %>% 
     pivot_wider(id_cols = word, names_from = province, values_from = proportion) %>% 
     ggplot(aes(x = Oregon, y = California, color = abs(Oregon - California))) +
-      geom_abline(color = "gray40", lty = 2) +
-      geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
-      geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
-      scale_x_log10(labels = percent_format()) +
-      scale_y_log10(labels = percent_format()) +
-      scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
-      theme(legend.position="none") +
-      labs(x = "Oregon", y = "California", title = "Words describing Pinot Noir from California and Oregon")
+    geom_abline(color = "gray40", lty = 2) +
+    geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+    geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+    scale_x_log10(labels = percent_format()) +
+    scale_y_log10(labels = percent_format()) +
+    scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+    theme(legend.position="none") +
+    labs(x = "Oregon", y = "California", title = "Words describing Pinot Noir from California and Oregon")
 ```
 
 ## Different from French Burgundy
@@ -112,14 +130,14 @@ wtxt %>%
   mutate(proportion = n / sum(n)) %>% 
   pivot_wider(id_cols = word, names_from = province, values_from = proportion) %>% 
   ggplot(aes(x = Oregon, y = Burgundy, color = abs(Oregon - Burgundy))) +
-    geom_abline(color = "gray40", lty = 2) +
-    geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
-    geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
-    scale_x_log10(labels = percent_format()) +
-    scale_y_log10(labels = percent_format()) +
-    scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
-    theme(legend.position="none") +
-    labs(x = "Oregon", y = "Burgundy", title = "Describing Pinot Noir from Burgundy and Oregon")
+  geom_abline(color = "gray40", lty = 2) +
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = percent_format()) +
+  scale_y_log10(labels = percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), low = "darkslategray4", high = "gray75") +
+  theme(legend.position="none") +
+  labs(x = "Oregon", y = "Burgundy", title = "Describing Pinot Noir from Burgundy and Oregon")
 ```
 
 ## Unique Oregon pinot descriptors (compared to California)
@@ -143,7 +161,8 @@ dtxt %>%
   ggplot(aes(word, diff)) +
   geom_col() +
   xlab(NULL) +
-  coord_flip()
+  coord_flip()+
+  jameson()
 ```
 
 ## Rating oregon flavors
@@ -161,7 +180,8 @@ wine %>%
   ) %>% 
   filter(!is.na(character)) %>% 
   ggplot(aes(points, fill=character))+
-    geom_density(alpha=.5)
+    geom_density(alpha=.5)+
+  jameson()
 ```
 
 ## Beyond the highest scores...
@@ -171,7 +191,8 @@ wine %>%
   filter(variety=="Pinot Noir") %>% 
   filter(province %in% pinots) %>% 
   ggplot(aes(x=province, y=points))+
-  geom_boxplot()
+  geom_boxplot()+
+  jameson()
   
 ```
 
@@ -182,7 +203,8 @@ wine %>%
   filter(variety=="Pinot Noir") %>% 
   filter(province %in% pinots) %>% 
   ggplot(aes(x=points, fill=province))+
-  geom_density(alpha=0.5)
+  geom_density(alpha=0.5)+
+  jameson()
   
 ```
 
@@ -196,7 +218,8 @@ wine %>%
   group_by(year, province) %>% 
   summarize(avg_points = mean(points)) %>% 
   ggplot(aes(x=as.integer(year), y=avg_points, color=province)) +
-    geom_line()
+    geom_line()+
+  jameson()
 ```
 
 ## Points per $$ for Pinot Noir
@@ -208,7 +231,8 @@ wine %>%
   ggplot(aes(x=points, y=log(price), color=province))+
   geom_point(alpha=0.1,show.legend = FALSE)+
   geom_smooth(method = lm,show.legend = FALSE) +
-  facet_wrap(~ province, scales="fixed")
+  facet_wrap(~ province, scales="fixed")+
+  jameson()
 ```
 
 ## More pricing power than California
@@ -233,7 +257,8 @@ wine %>%
   filter(province %in% pinots) %>% 
   mutate(points_per_dollar= points/price) %>% 
   ggplot(aes(x=province, y=log(points_per_dollar)))+
-  geom_boxplot()
+  geom_boxplot()+
+  jameson()
   
 ```
 
@@ -252,6 +277,8 @@ Oregon Pinot Noir...
 
 Quality Oregon wines under $50
 ```{r}
+# should I do points ratio?
+
 wine %>% 
   filter(province == "Oregon") %>% 
   filter(variety != "Riesling") %>% 

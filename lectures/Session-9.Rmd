@@ -1,0 +1,442 @@
+---
+title: "Advanced Visualization"
+author: "Jameson Watts, Ph.D."
+output:
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+setwd("~/GDrive/teaching/GSMDS-5001/")
+options("kableExtra.html.bsTable" = T)
+options(knitr.table.format = "html") 
+library(tidyverse)
+library(moderndive)
+library(kableExtra)
+d <- read_csv("resources/ab-data.csv")
+```
+
+## Agenda
+
+1. Modeling Review (and upgrade)
+2. Facets 
+3. Random cool stuff
+
+## But first...
+
+### Final project check-in
+
+- **11/2:** You have a data set and have started to look at variables and some descriptive statistics
+- **11/16:** You have a comprehensive set of tables and graphs that adequately describe your data and tell a "model-free" story
+- **11/30:** You have finished modeling the relationships in the data and are confident in the qualitiy and validity of the results
+- **12/14:** All writing is done, all tables and graphs are clear and sized correctly, report knits to a beautiful html presentation suitable for consumption by a non-technical manager
+
+# Regression review 
+
+## Topics covered
+
+1. Univariate linear regression
+2. Hypothesis testing for proportions and continuous outcomes
+3. Multiple regression
+4. **Univariate regression as alternative to t-test**
+5. **Categorical x categorial interactions**
+7. **Multiple regresson for uplift modeling**
+8. **Regression diagnostics**
+9. **Categorical x continuous interactions**
+
+## Practice: Univariate Regression for A/B
+
+#### What is the difference in open and click rates for email A vs. email B? 
+\
+\
+Use linear regression (not proportionality tests) to answer the question.
+
+## Solution
+```{r}
+rd <- d %>% 
+  filter(group!="ctrl") %>% 
+  mutate(email_A=(group=="email_A"))
+```
+
+Opens
+```{r}
+m <- lm(open~email_A, data = rd)
+summary(m)$coef
+```
+
+Clicks
+```{r}
+m <- lm(click~email_A, data = rd)
+summary(m)$coef
+
+```
+
+
+## Compared to proportionality test?
+```{r}
+success <- d %>% 
+  filter(group!="ctrl") %>% 
+  group_by(group,click) %>% 
+  count() %>% 
+  filter(click==1)
+trials <- d %>% 
+  filter(group!="ctrl") %>% 
+  count(group)
+
+prop.test(success$n,trials$n)
+```
+
+## Practice: categorical interactions
+
+#### What is the difference in the impact that our promotional email had on purchases for those with past purchases greater than zero?
+\
+\
+Use linear regression with a categorical by categorical interaction.
+
+## Solution
+```{r}
+rd <- d %>% 
+  mutate(email=(group!="ctrl"))
+
+m <- lm(purch~email*(past_purch>0), data = rd)
+summary(m)$coef
+```
+
+## Compare that with filter and t-test
+```{r}
+t.test(purch~email, data=filter(rd, past_purch>10))
+```
+
+## Visualize it (upgrade)
+
+```{r, fig.height=3}
+rd %>% 
+  mutate(pp=(past_purch>0)) %>% 
+  group_by(email, pp) %>% 
+  summarise(purch = mean(purch)) %>% 
+  ggplot() +
+  aes(x = pp, y = purch, color = email) +
+  geom_line(aes(group = email)) +
+  geom_point()
+```
+
+
+## Practice: uplift modeling
+
+#### Given the model used in the previous practice problem, how does recieving an email change the predicted purchase amount for someone with the same baseline variables as customer 1001?
+
+## Solution
+
+```{r}
+m <- lm(purch~email*(past_purch>0), data = mutate(d,email=(group!="ctrl")))
+(pred <- predict(m, cbind(email=c(TRUE, FALSE), slice(d,1001))))
+(lift <- pred[1] - pred[2])
+```
+
+The model predicts a lift of \$`r round(lift,2)` for customer 200.
+
+## Practice: regression diagnostics
+
+#### Should we use a model with (past_purchase>0) as the cutoff or simply past_purch (as a continuous variable)? Split the data into test and train subsets and evaluate the models on their predictive quality.
+
+## Solution - models and subsets
+
+```{r}
+# Randomly shuffle order of rows:
+d_shuffled <- d %>%
+  mutate(email=(group!="ctrl")) %>% 
+  sample_frac(size = 1, replace = FALSE)
+# Split into train and test:
+split <-  round(.8*nrow(d)) # 80% of dataframe
+train <- d_shuffled %>%
+  slice(1:split)
+test <- d_shuffled %>%
+  slice(split+1:nrow(d))
+
+m1 <- lm(purch~email*(past_purch>0), data = train)
+m2 <- lm(purch~email*past_purch, data = train)
+```
+
+## Solution - rmse
+
+Model 1: past_purch > 0
+```{r}
+get_regression_points(m1, newdata = test) %>% 
+  mutate(sq_residuals = residual^2) %>%
+  summarize(rmse = sqrt(mean(sq_residuals)))
+```
+Model 2: past_purch continous
+```{r}
+get_regression_points(m2, newdata = test) %>% 
+  mutate(sq_residuals = residual^2) %>%
+  summarize(rmse = sqrt(mean(sq_residuals)))
+```
+
+## Practice: categorical by continuous interactions
+
+```{r}
+m <- lm(purch~email*past_purch, data = train)
+summary(m)$coef
+```
+
+What effect does email have on the relationship between past purchases and current purchases?
+
+## Visualising the interaction (upgrade)
+
+```{r, fig.height=4}
+train %>% 
+  ggplot(aes(past_purch, purch, color=email))+
+  geom_smooth(method=lm)+
+  xlim(0,500)
+```
+
+
+## Continuous by continuous interactions (upgrade)
+
+```{r}
+m <- lm(purch~last_purch*visits, data = train)
+summary(m)$coef
+```
+
+## Visualizing the interaction (upgrade)
+
+```{r include=FALSE}
+library(margins)
+sample <- sample_frac(d, size = .03, replace = FALSE)
+m <- lm(purch~last_purch*visits, data = sample)
+
+# Create a range of meaningful values of x for the prediction. We don't need all of them, 
+#  so I am going to increment by .5
+x.seq <- seq(from = round(min(sample$last_purch)), to = round(max(sample$last_purch)), by = 5)
+
+# Now we get the low and high values of m based on one standard deviation 
+#  above and below the mean
+low.v <- mean(sample$visits) - sd(sample$visits)
+high.v <- mean(sample$visits) + sd(sample$visits)
+
+# Lastly we create two new dataframes based on our new values of x and our low/high values of m
+low.df <- data_frame(last_purch = x.seq, visits = low.v)
+high.df <- data_frame(last_purch = x.seq, visits = high.v)
+
+predict.low <- cplot(m, x = "last_purch", what = c("prediction"), data = low.df, draw = FALSE) %>% 
+  mutate(visits=-1)
+predict.high <- cplot(m, x = "last_purch", what = c("prediction"), data = high.df, draw = FALSE) %>% 
+  mutate(visits=1)
+predict.model <- bind_rows(predict.low, predict.high) %>%
+  mutate(visits = factor(visits, levels = c(-1, 1), labels = c("Low Visits", "High Visits")))
+
+predict.plot <- ggplot(data = predict.model, aes(x = xvals, group = visits)) + 
+  geom_line(aes(y = yvals, color = visits)) + 
+  geom_ribbon(alpha = .2, aes(ymin = lower, ymax = upper)) + 
+  labs(title = "Effect of last_purch on purch Moderated by visits",
+       subtitle = "Simple Slopes at +/- 1 Standard Deviation of Mean-Centered Visits",
+       y = "Predicted Values of Purch",
+       x = "Last Purch")+
+      theme(legend.position = c(.7, .85))
+
+mm <- cplot(m, dx="last_purch", x="visits", what="effect", data = sample, draw = F)
+margins.plot <- ggplot(mm, aes(x = xvals, y = yvals)) + 
+    geom_line(color = "red") + 
+    geom_ribbon(alpha = .2, aes(ymin = lower, ymax = upper)) + 
+    geom_hline(yintercept = 0, linetype = "dashed") +  # I add a vertical line at zero to help with interpretation
+    labs(title = "Marginal Effect of last_purch on purch as a function of visits",
+         subtitle = "Marginal Effect of last_purch Across Range of Mean-Centered visits",
+         y = "Estimated Effect of last_purch on purch",
+         x = "Visits")
+```
+
+
+```{r, echo=F}
+library(cowplot)
+plot_grid(predict.plot, margins.plot, ncol = 2, align = "h")
+```
+
+# Faceting
+
+## Setup
+```{r}
+wine <- read_csv("../resources/winemag-data.csv") %>% 
+  filter(!is.na(price)) %>%
+  mutate(year = as.numeric(str_extract(title,"(\\d{4})"))) %>% 
+  filter(province %in% c("Washington","Oregon","California")) %>% 
+  filter(variety %in% c("Pinot Noir", "Chardonnay", "Cabernet Sauvignon"))
+```
+
+## Facet wrap
+
+```{r}
+wine %>% 
+  ggplot(aes(points, fill=province))+
+  geom_density()+
+  facet_wrap(facets = ~province)
+```
+
+
+## Facet grid
+
+```{r}
+wine %>% 
+  ggplot(aes(points, fill=province))+
+  geom_density()+
+  facet_grid(. ~ province)
+```
+
+## Facet grid horizontal
+
+```{r}
+wine %>% 
+  ggplot(aes(points, fill=province))+
+  geom_density()+
+  facet_grid(province ~ .)
+```
+
+## Facet grid multiple
+
+```{r}
+wine %>% 
+  ggplot(aes(points, fill=variety))+
+  geom_density()+
+  facet_grid(province~variety)
+```
+
+## Exercise
+
+1. Create facet grid of transparent jittered points 
+2. by province and variety
+3. that shows log(price) as a function of points
+4. with a regression line
+
+## Solution
+
+```{r}
+wine %>% 
+  ggplot(aes(points,log(price), color=variety))+
+  geom_jitter(alpha=0.2)+
+  geom_smooth(method = "lm", color="black")+
+  facet_grid(province~variety)
+```
+
+## Cowplot setup
+
+```{r}
+library(cowplot)
+plot1 <- ggplot(wine, aes(points,log(price), color=variety))+
+  geom_jitter(alpha=0.2)+
+  geom_smooth(method = "lm", color="black")+
+  facet_grid(province~variety)+
+  theme(legend.position="none")
+plot2 <- ggplot(wine, aes(points, fill=variety))+
+  geom_density()+
+  facet_grid(province~variety)+
+  theme(legend.position="none")
+```
+
+## Cowplot plot
+```{r}
+plot_grid(plot1, plot2, ncol = 2, align = "h")
+```
+
+# Random cool stuff
+
+## Custom themes
+
+- element_text()
+- element_rect()
+- element_line()
+- element_blank()
+
+```{r}
+library(wesanderson)
+jameson <- function(){
+  list(
+    theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    ),
+    scale_color_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous")),
+    scale_fill_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous"))
+  )
+}
+
+```
+
+## Using the 'jameson' theme
+
+```{r}
+wine %>% 
+  ggplot(aes(points, fill=variety))+
+  geom_density()+
+  facet_grid(province~variety)+
+  jameson()
+```
+
+
+## Dot plot
+
+```{r}
+wine %>% 
+  filter(year %in% c(2000, 2010)) %>% 
+  group_by(province,year) %>% 
+  summarise(points=mean(points)) %>% 
+  ggplot(aes(x = points, y = province))+
+  geom_path(arrow = arrow(length = unit(1.5, "mm"), type = "closed"))+
+  labs(title = "Change in average points from 2000 to 2010 for west coast states") +
+  jameson()
+  
+```
+
+
+## Overplotting
+
+```{r}
+wine %>% 
+  ggplot(aes(points, log(price), color=variety))+
+  geom_jitter()+
+  facet_grid(. ~ variety)+
+  jameson()+
+  theme(legend.position="none")
+```
+
+
+## 2d density
+
+```{r}
+wine %>% 
+  ggplot(aes(points, log(price), color=variety))+
+  geom_density_2d()+
+  facet_grid(. ~ variety)+
+  jameson()+
+  theme(legend.position="none")
+```
+
+## 2d Histogram
+
+```{r}
+wine %>% 
+  ggplot(aes(points,log(price)))+
+  geom_bin2d(bins=20)+
+  facet_grid(. ~ variety)+
+  theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    )
+```
+
+## Long exercise
+
+1. Gather in groups of 2-3
+2. Create the ugliest custom theme that you can
+3. Apply it to a plot of the wine data (you can use full dataset)
+4. To show something **completely new!!!**
+
+
