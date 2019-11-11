@@ -106,7 +106,7 @@ summary(m)$coef
 
 ## Compare that with filter and t-test
 ```{r}
-t.test(purch~email, data=filter(rd, past_purch>10))
+t.test(purch~email, data=filter(rd, past_purch>0))
 ```
 
 ## Visualize it (upgrade)
@@ -310,7 +310,7 @@ wine %>%
 
 ## Solution
 
-```{r}
+```{r, fig.height=4}
 wine %>% 
   ggplot(aes(points,log(price), color=variety))+
   geom_jitter(alpha=0.2)+
@@ -334,7 +334,7 @@ plot2 <- ggplot(wine, aes(points, fill=variety))+
 ```
 
 ## Cowplot plot
-```{r}
+```{r, fig.height=4}
 plot_grid(plot1, plot2, ncol = 2, align = "h")
 ```
 
@@ -368,7 +368,7 @@ jameson <- function(){
 
 ## Using the 'jameson' theme
 
-```{r}
+```{r, fig.height=4}
 wine %>% 
   ggplot(aes(points, fill=variety))+
   geom_density()+
@@ -379,7 +379,7 @@ wine %>%
 
 ## Dot plot
 
-```{r}
+```{r, fig.height=3}
 wine %>% 
   filter(year %in% c(2000, 2010)) %>% 
   group_by(province,year) %>% 
@@ -394,7 +394,7 @@ wine %>%
 
 ## Overplotting
 
-```{r}
+```{r, fig.height=3}
 wine %>% 
   ggplot(aes(points, log(price), color=variety))+
   geom_jitter()+
@@ -406,7 +406,7 @@ wine %>%
 
 ## 2d density
 
-```{r}
+```{r, fig.height=3}
 wine %>% 
   ggplot(aes(points, log(price), color=variety))+
   geom_density_2d()+
@@ -417,7 +417,7 @@ wine %>%
 
 ## 2d Histogram
 
-```{r}
+```{r, fig.height=3}
 wine %>% 
   ggplot(aes(points,log(price)))+
   geom_bin2d(bins=20)+
