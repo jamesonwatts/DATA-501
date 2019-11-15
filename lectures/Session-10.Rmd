@@ -1,0 +1,141 @@
+---
+title: "Advanced Visualization"
+author: "Jameson Watts, Ph.D."
+output:
+  ioslides_presentation:
+    smaller: yes
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
+setwd("~/GDrive/teaching/GSMDS-5001/")
+library(tidyverse)
+library(moderndive)
+wine <- read_csv("resources/winemag-data.csv") %>% 
+  filter(!is.na(price)) %>%
+  mutate(year = as.numeric(str_extract(title,"(\\d{4})"))) 
+```
+
+## Agenda
+
+
+# Random cool stuff
+
+## Maps
+
+```{r}
+library(ggmap)
+ggmap::register_google(key = "AIzaSyBBOnCl_BpX5bEprVRmMzLWDwE8egmd1KU")
+```
+
+```{r}
+p <- ggmap(get_googlemap(center = c(lon = -122.335167, lat = 47.608013),
+                    zoom = 11, scale = 2,
+                    maptype ='terrain',
+                    color = 'color'))
+p + geom_point(aes(x = Longitude, y = Latitude,  colour = Initial.Type.Group), data = i2, size = 0.5) + 
+  theme(legend.position="bottom")
+```
+
+
+## Custom themes
+
+- element_text()
+- element_rect()
+- element_line()
+- element_blank()
+
+```{r}
+library(wesanderson)
+jameson <- function(){
+  list(
+    theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    ),
+    scale_color_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous")),
+    scale_fill_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous"))
+  )
+}
+
+```
+
+## Using the 'jameson' theme
+
+```{r, fig.height=4}
+wine %>% 
+  ggplot(aes(points, fill=variety))+
+  geom_density()+
+  facet_grid(province~variety)+
+  jameson()
+```
+
+
+## Dot plot
+
+```{r, fig.height=3}
+wine %>% 
+  filter(year %in% c(2000, 2010)) %>% 
+  group_by(province,year) %>% 
+  summarise(points=mean(points)) %>% 
+  ggplot(aes(x = points, y = province))+
+  geom_path(arrow = arrow(length = unit(1.5, "mm"), type = "closed"))+
+  labs(title = "Change in average points from 2000 to 2010 for west coast states") +
+  jameson()
+  
+```
+
+
+## Overplotting
+
+```{r, fig.height=3}
+wine %>% 
+  ggplot(aes(points, log(price), color=variety))+
+  geom_jitter()+
+  facet_grid(. ~ variety)+
+  jameson()+
+  theme(legend.position="none")
+```
+
+
+## 2d density
+
+```{r, fig.height=3}
+wine %>% 
+  ggplot(aes(points, log(price), color=variety))+
+  geom_density_2d()+
+  facet_grid(. ~ variety)+
+  jameson()+
+  theme(legend.position="none")
+```
+
+## 2d Histogram
+
+```{r, fig.height=3}
+wine %>% 
+  ggplot(aes(points,log(price)))+
+  geom_bin2d(bins=20)+
+  facet_grid(. ~ variety)+
+  theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    )
+```
+
+## Long exercise
+
+1. Gather in groups of 2-3
+2. Create the ugliest custom theme that you can
+3. Apply it to a plot of the wine data (you can use full dataset)
+4. To show something **completely new!!!**
+
+
