@@ -1,5 +1,5 @@
 ---
-title: "Advanced Visualization"
+title: "Reporting"
 author: "Jameson Watts, Ph.D."
 output:
   ioslides_presentation:
@@ -7,121 +7,46 @@ output:
     widescreen: yes
 ---
 
+<style>
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+
+strong{
+  color: #018080;
+}
+
+A{
+  color: #018080;
+}
+
+</style>
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message=FALSE, warning = FALSE)
 setwd("~/GDrive/teaching/GSMDS-5001/")
 library(tidyverse)
-library(moderndive)
 wine <- read_csv("resources/winemag-data.csv") %>% 
   filter(!is.na(price)) %>%
-  mutate(year = as.numeric(str_extract(title,"(\\d{4})"))) 
+  mutate(year = as.numeric(str_extract(title,"(\\d{4})"))) %>% 
+  filter(province %in% c("Washington","Oregon","California")) %>% 
+  filter(variety %in% c("Pinot Noir", "Cabernet Sauvignon", "Syrah"))
 ```
 
 ## Agenda
 
+1. Review advanced visualizations (and upgrade)
+2. Customizing your reports
+3. Dashboards
 
-# Random cool stuff
+# Review of advanced visualizations
 
-## Maps
-
+## Fixing the 'jameson' theme
 ```{r}
-library(ggmap)
-ggmap::register_google(key = "AIzaSyBBOnCl_BpX5bEprVRmMzLWDwE8egmd1KU")
-```
-
-```{r}
-p <- ggmap(get_googlemap(center = c(lon = -122.335167, lat = 47.608013),
-                    zoom = 11, scale = 2,
-                    maptype ='terrain',
-                    color = 'color'))
-p + geom_point(aes(x = Longitude, y = Latitude,  colour = Initial.Type.Group), data = i2, size = 0.5) + 
-  theme(legend.position="bottom")
-```
-
-
-## Custom themes
-
-- element_text()
-- element_rect()
-- element_line()
-- element_blank()
-
-```{r}
-library(wesanderson)
-jameson <- function(){
-  list(
-    theme_minimal() +
-    theme(
-      text = element_text(family = "Palatino", color = "gray25"),
-      plot.subtitle = element_text(size = 12),
-      plot.caption = element_text(color = "gray30"),
-      plot.background = element_rect(fill = "gray95"),
-      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
-    ),
-    scale_color_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous")),
-    scale_fill_manual(values = wes_palette(n=5, name="Moonrise3", type = "continuous"))
-  )
-}
-
-```
-
-## Using the 'jameson' theme
-
-```{r, fig.height=4}
-wine %>% 
-  ggplot(aes(points, fill=variety))+
-  geom_density()+
-  facet_grid(province~variety)+
-  jameson()
-```
-
-
-## Dot plot
-
-```{r, fig.height=3}
-wine %>% 
-  filter(year %in% c(2000, 2010)) %>% 
-  group_by(province,year) %>% 
-  summarise(points=mean(points)) %>% 
-  ggplot(aes(x = points, y = province))+
-  geom_path(arrow = arrow(length = unit(1.5, "mm"), type = "closed"))+
-  labs(title = "Change in average points from 2000 to 2010 for west coast states") +
-  jameson()
-  
-```
-
-
-## Overplotting
-
-```{r, fig.height=3}
-wine %>% 
-  ggplot(aes(points, log(price), color=variety))+
-  geom_jitter()+
-  facet_grid(. ~ variety)+
-  jameson()+
-  theme(legend.position="none")
-```
-
-
-## 2d density
-
-```{r, fig.height=3}
-wine %>% 
-  ggplot(aes(points, log(price), color=variety))+
-  geom_density_2d()+
-  facet_grid(. ~ variety)+
-  jameson()+
-  theme(legend.position="none")
-```
-
-## 2d Histogram
-
-```{r, fig.height=3}
-wine %>% 
-  ggplot(aes(points,log(price)))+
-  geom_bin2d(bins=20)+
-  facet_grid(. ~ variety)+
-  theme_minimal() +
+jameson <- theme_minimal() +
     theme(
       text = element_text(family = "Palatino", color = "gray25"),
       plot.subtitle = element_text(size = 12),
@@ -129,13 +54,164 @@ wine %>%
       plot.background = element_rect(fill = "gray95"),
       plot.margin = unit(c(5, 10, 5, 10), units = "mm")
     )
+theme_set(jameson)
+
+library(wesanderson)
+scale_colour_discrete <- function(...) {
+  scale_colour_manual(..., values = wes_palette(n=8, name="Moonrise3", type = "continuous"))
+}
+scale_fill_discrete <- function(...) {
+  scale_fill_manual(..., values = wes_palette(n=8, name="Moonrise3", type = "continuous"))
+}
 ```
 
-## Long exercise
 
-1. Gather in groups of 2-3
-2. Create the ugliest custom theme that you can
-3. Apply it to a plot of the wine data (you can use full dataset)
-4. To show something **completely new!!!**
+## Works great for discrete colors.
+```{r, fig.height=4}
+wine %>% 
+  ggplot(aes(points, fill=variety))+
+  geom_density()+
+  facet_grid(province~variety)
+```
 
+## But what about continuous?
+
+```{r, fig.height=3.5}
+wine %>% 
+  ggplot(aes(points,log(price)))+
+  geom_bin2d(bins=20)+
+  facet_grid(. ~ variety)
+```
+
+## Overriding the continuous function
+
+```{r}
+lc=wes_palette(n=2, name="Moonrise3")[[1]]
+hc=wes_palette(n=2, name="Moonrise3")[[2]]
+scale_colour_continuous <- function(...) {
+  scale_colour_gradient(..., low = lc, high = hc)
+}
+scale_fill_continuous <- function(...) {
+  scale_fill_gradient(..., low = lc, high = hc)
+}
+```
+
+## Better
+
+```{r, fig.height=3.5}
+wine %>% 
+  ggplot(aes(points,log(price)))+
+  geom_bin2d(bins=20)+
+  facet_grid(. ~ variety)
+```
+
+## Exercise (Part A)
+
+1. Modify the below code to create your own theme
+2. and set it globally
+```{r}
+jameson <- theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    )
+theme_set(jameson)
+```
+
+## Exercise (Part B)
+3. Create line plot of average points from 2000 to 2014
+4. Faceted by province and variety
+
+**Hint:** filter year > 1999 and < 2015 to get rid of random years
+
+## Solution
+```{r, fig.height=3.5}
+wine %>% 
+  filter(year < 2015 & year > 1999) %>% 
+  group_by(province,variety,year) %>% 
+  summarise(points=mean(points)) %>% 
+  ggplot(aes(x = year, y = points, color=variety))+
+  geom_line()+
+  facet_grid(province~variety)
+```
+
+
+
+# Customizing your markdown reports
+
+## TOC and Numbering
+
+toc: true \
+toc_depth: 2 \
+toc_float: \
+&nbsp;&nbsp; collapsed: false \
+&nbsp;&nbsp; smooth_scroll: true \
+number_sections: true \
+
+
+## Tabs and Themes
+
+- use {.tabset} within a section to create tabs
+- themes come from https://bootswatch.com/3/
+- highlight specifies the syntax highlighting style. Supported styles include default, tango, pygments, kate, monochrome, espresso, zenburn, haddock, breezedark, and textmate.
+
+## Stylesheets, figures, and tables
+
+You can create your own stylesheet if you wanna tweak stuff or override the whole thing. See **Session-10.css** for a few examples, or look at https://www.w3schools.com/cssref/ for the full reference.
+
+You can set a variety of image features like width, height and caption. Default size is 5x7
+
+You can set the default table rendering to *default*, *kable*, *tibble*, or *paged*
+
+## Self-contained and templates
+
+**self_contained: false**
+
+Note that by default, all images etc are fully embedded in the html file... but they don't need to be.
+
+**template: quarterly_report.html**
+
+See https://pandoc.org/MANUAL.html#templates for more information.
+
+## Exercise
+
+1. Create a new RMarkdown file (for your final report)
+2. Add your custom theme to the setup chunk
+3. Load your data in the setup chunk
+4. Create an outline for your report with a TOC
+5. Customize YAML options to your liking
+
+output: \
+&nbsp;&nbsp;  html_document:
+&nbsp;&nbsp;&nbsp;&nbsp;    toc: true \
+&nbsp;&nbsp;&nbsp;&nbsp;    toc_depth: 2 \
+&nbsp;&nbsp;&nbsp;&nbsp;    toc_float: \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;     collapsed: true \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;      smooth_scroll: true \
+&nbsp;&nbsp;&nbsp;&nbsp;    number_sections: true \
+&nbsp;&nbsp;&nbsp;&nbsp;    theme: journal \
+&nbsp;&nbsp;&nbsp;&nbsp;    highlight: default \
+&nbsp;&nbsp;&nbsp;&nbsp;    css: Session-10.css \
+&nbsp;&nbsp;&nbsp;&nbsp;    fig_height: 5 \
+&nbsp;&nbsp;&nbsp;&nbsp;    fig_width: 8.5 \
+&nbsp;&nbsp;&nbsp;&nbsp;    df_print: kable \
+
+https://bookdown.org/yihui/rmarkdown/html-document.html
+
+# Dashboards
+
+## Flexdashboard
+
+> install.packages("flexdashboard")
+
+File-->new-->RMarkdown-->Templates
+
+See the full documentation here: https://rmarkdown.rstudio.com/flexdashboard/using.html#overview
+
+## Shiny
+
+## Exercise
 

@@ -1,0 +1,151 @@
+---
+title: "Custom RMarkdown"
+author: "Jameson Watts, Ph.D."
+date: "11/15/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: true
+    theme: journal
+    highlight: default
+    css: Session-10.css
+    fig_height: 5
+    fig_width: 8.5
+    df_print: kable
+---
+
+<style>
+blockquote {
+  background: #f9f9f9;
+  border-left: 5px solid #ccc;
+  margin: 1.5em 10px;
+  padding: 0.5em 1.5em;
+}
+
+A{
+  color: #018080;
+}
+
+</style>
+
+# Setup
+
+## References
+
+Here is the **definitive** reference. You should *totally* read it!
+
+https://bookdown.org/yihui/rmarkdown/html-document.html
+
+## Environment
+
+```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning = FALSE)
+setwd("~/GDrive/teaching/GSMDS-5001/")
+library(tidyverse)
+library(moderndive)
+wine <- read_csv("resources/winemag-data.csv") %>% 
+  filter(!is.na(price)) %>%
+  mutate(year = as.numeric(str_extract(title,"(\\d{4})")))
+  
+jameson <- theme_minimal() +
+    theme(
+      text = element_text(family = "Palatino", color = "gray25"),
+      plot.subtitle = element_text(size = 12),
+      plot.caption = element_text(color = "gray30"),
+      plot.background = element_rect(fill = "gray95"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm")
+    )
+theme_set(jameson)
+
+library(wesanderson)
+scale_colour_discrete <- function(...) {
+  scale_colour_manual(..., values = wes_palette(n=8, name="Moonrise3", type = "continuous"))
+}
+scale_fill_discrete <- function(...) {
+  scale_fill_manual(..., values = wes_palette(n=8, name="Moonrise3", type = "continuous"))
+}
+
+lc=wes_palette(n=2, name="Moonrise3")[[1]]
+hc=wes_palette(n=2, name="Moonrise3")[[2]]
+scale_colour_continuous <- function(...) {
+  scale_colour_gradient(..., low = lc, high = hc)
+}
+scale_fill_continuous <- function(...) {
+  scale_fill_gradient(..., low = lc, high = hc)
+}
+```
+
+# Tables
+
+## Best deals on Oregon wine {.tabset}
+
+### 90 point Oregon Pinots
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  filter(variety=="Pinot Noir") %>% 
+  filter(points >= 90) %>% 
+  mutate(pp=points/log(price)) %>% 
+  top_n(10,pp) %>% 
+  arrange(desc(pp)) %>% 
+  select(title, points, price)
+```
+
+### 95 point Oregon Pinots
+
+```{r}
+wine %>% 
+  filter(province=="Oregon") %>% 
+  filter(variety=="Pinot Noir") %>% 
+  filter(points >= 95) %>% 
+  mutate(pp=points/log(price)) %>% 
+  top_n(10,pp) %>% 
+  arrange(desc(pp)) %>% 
+  select(title, points, price)
+```
+
+## Most expensive wine ever!!!
+
+```{r}
+wine %>% 
+  top_n(10,price) %>% 
+  arrange(desc(price)) %>% 
+  select(title, points, price)
+```
+
+
+# Visualizatons
+
+## 2d density
+
+```{r}
+wine %>%
+  filter(province %in% c("Washington","Oregon","California")) %>% 
+  filter(variety %in% c("Pinot Noir", "Cabernet Sauvignon", "Syrah")) %>% 
+  ggplot(aes(points, log(price), color=variety))+
+  geom_density_2d()+
+  facet_grid(. ~ variety)+
+  theme(legend.position="none")
+```
+
+## Change in points for west coast Pinot Noir
+
+```{r}
+wine %>%
+  filter(province %in% c("Oregon","California")) %>% 
+  filter(variety == "Pinot Noir") %>% 
+  filter(year %in% c(2000, 2010)) %>% 
+  group_by(province,year) %>% 
+  summarise(points=mean(points)) %>% 
+  ggplot(aes(x = points, y = province))+
+  geom_path(arrow = arrow(length = unit(1.5, "mm"), type = "closed"))+
+  labs(title = "Change in average points from 2000 to 2010 for west coast states")
+  
+```
+
+
