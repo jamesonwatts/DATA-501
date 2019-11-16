@@ -69,41 +69,39 @@ Row
 ### Average Price
 
 ```{r}
-avg_price <- wine %>% filter(variety=="Pinot Noir") %>% summarize(price=mean(price))
-gauge(avg_price$price, min = 0, max = 100, symbol = '%', 
+avg_price <- wine %>% summarize(price=mean(price))
+gauge(round(avg_price$price), min = 0, max = 100, 
       gaugeSectors(success = c(80, 100), warning = c(40, 79), danger = c(0, 39)))
 ```
 
 ### Average Points
 
 ```{r}
-avg_points <- wine %>% filter(variety=="Pinot Noir") %>% summarize(points=mean(points))
-gauge(avg_points$points, min = 0, max = 100, symbol = '%', 
+avg_points <- wine %>% summarize(points=mean(points))
+gauge(round(avg_points$points), min = 0, max = 100, 
       gaugeSectors(success = c(80, 100), warning = c(40, 79), danger = c(0, 39)))
 ```
 
 ### Choices
 
 ```{r}
-choices <- wine %>% filter(variety=="Pinot Noir") %>% count()
+choices <- wine %>% count()
 valueBox(choices, icon = "fa-comments")
 ```
 
-Row 
+Row {data-height=300}
 -----------------------------------------------------------------------
+
 
 ### Chart A
 
-```{r, fig.width=10.5}
+```{r}
 wine %>% 
   ggplot(aes(points, fill=variety))+
   geom_density()+
-  facet_grid(province~variety)
+  facet_grid(. ~variety)
 ```
 
-<!-- Row {.tabset .tabset-fade} -->
-Row
------------------------------------------------------------------------
 
 ### Chart B
 
@@ -124,5 +122,28 @@ wine %>%
   ggplot(aes(points,log(price)))+
   geom_bin2d(bins=20)+
   facet_grid(. ~ variety)
+```
+
+Row {.tabset .tabset-fade}
+-----------------------------------------------------------------------
+
+### Average points over time
+```{r, fig.width=15}
+wine %>% 
+  filter(year < 2015 & year > 1999) %>% 
+  group_by(year) %>% 
+  summarise(points=mean(points)) %>% 
+  ggplot(aes(x = year, y = points))+
+  geom_line()
+```
+
+### Average price over time
+```{r, fig.width=15}
+wine %>% 
+  filter(year < 2015 & year > 1999) %>% 
+  group_by(year) %>% 
+  summarise(price=mean(price)) %>% 
+  ggplot(aes(x = year, y = price))+
+  geom_line()
 ```
 

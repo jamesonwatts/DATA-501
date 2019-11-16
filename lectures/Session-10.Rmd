@@ -211,7 +211,17 @@ File-->new-->RMarkdown-->Templates
 
 See the full documentation here: https://rmarkdown.rstudio.com/flexdashboard/using.html#overview
 
-## Shiny
-
 ## Exercise
+
+1. Create a new flexdashboard
+2. View the documentation at the link below to pick your favorite layout
+3. Create a dashboard from your final project data with
+  + three highlights
+  + three or more charts / tables
+  
+https://rmarkdown.rstudio.com/flexdashboard/using.html#overview
+
+## Shiny (sorta bonus)
+
+https://shiny.rstudio.com/gallery/
 
