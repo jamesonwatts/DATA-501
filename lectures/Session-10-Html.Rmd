@@ -5,7 +5,7 @@ date: "11/15/2019"
 output: 
   html_document:
     toc: true
-    toc_depth: 2
+    toc_depth: 3
     toc_float:
       collapsed: true
       smooth_scroll: true
@@ -15,7 +15,7 @@ output:
     css: Session-10.css
     fig_height: 5
     fig_width: 8.5
-    df_print: kable
+    df_print: paged
 ---
 
 <style>
@@ -35,6 +35,8 @@ A{
 # Setup
 
 ## References
+
+### Real reference
 
 Here is the **definitive** reference. You should *totally* read it!
 
@@ -91,7 +93,7 @@ wine %>%
   filter(variety=="Pinot Noir") %>% 
   filter(points >= 90) %>% 
   mutate(pp=points/log(price)) %>% 
-  top_n(10,pp) %>% 
+  top_n(30,pp) %>% 
   arrange(desc(pp)) %>% 
   select(title, points, price)
 ```
@@ -104,7 +106,7 @@ wine %>%
   filter(variety=="Pinot Noir") %>% 
   filter(points >= 95) %>% 
   mutate(pp=points/log(price)) %>% 
-  top_n(10,pp) %>% 
+  top_n(30,pp) %>% 
   arrange(desc(pp)) %>% 
   select(title, points, price)
 ```
