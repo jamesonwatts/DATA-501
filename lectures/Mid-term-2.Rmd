@@ -1,0 +1,161 @@
+---
+title: "Mid-term Exam 2"
+author: "Jameson Watts, Ph.D."
+date: "11/23/2019"
+output: 
+  html_document:
+    number_sections: true
+---
+
+
+**Directions**
+
+1. You have till noon to complete the exam
+2. Everything (all code) needed to answer each problem should be included in this file so that I can reproduce your answers.
+3. Sometimes you will be required to provide a written answer in addition to your code
+4. Code blocks are already provided below each problem
+5. When you are finished, submit both the Rmd file and knitted html file to the appropriate assignment on WISE
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(tidyverse)
+```
+
+# Setup
+
+## (3pts)
+
+1. Revise this RMarkdown file so that you are the author.
+2. Add YAML so that the knitted html produces a table of contents
+3. With depth 2
+4. That floats
+5. And scrolls smoothly
+6. with Kable tables
+
+## (2pts)
+
+2. Load the wine dataset,
+3. get rid of wines with prices that are NA,
+4. extract the year from the title,
+5. make sure the new year variable is numeric
+6. and remove years before 2000 and after 2015
+
+```{r}
+
+```
+
+# Descriptives
+
+## (3pts)
+
+What is the year with the highest prices on average in Texas? 
+
+```{r}
+
+```
+
+
+## (2pts)
+
+Create a graph that compares standard deviation in wine price over time for Spain and Italy. 
+
+```{r}
+
+```
+
+## (3pts)
+
+Which country's wines (Italy or Spain) vary the most by year?
+
+```{r}
+
+```
+
+# Advanced Visualization
+
+## (5pts)
+
+Create a dot plot that shows the change in average wine points for every region in Oregon between 2010 and 2015. Use the labs() function to make sure your plot has a title and informative x and y axis labels.
+
+```{r}
+
+```
+
+
+## (5pts)
+
+Find the three most prolific tasters. Then find the standard deviation in points and the standard deviation in log(price) within each variety for each of the three tasters identified. Finally, create a 2d density plot of your results faceted by the top 3 tasters.
+
+```{r}
+
+```
+
+## Bonus (1pt)
+
+Provide a convincing interpretation of the plot from the previous question.
+
+*Answer:*
+
+# Regression
+
+## (5pts)
+
+Do points affect log(price) more for Chardonnay or Pinot Gris? In addition to running the regressions, please also write your answer in a way a manager can understand.
+
+*Hint:* You may want to filter on the specific variety prior to running your models
+
+```{r}
+
+```
+
+*Answer:* 
+
+## (5pts)
+
+How does Roger Voss affect (i.e. interact with) the points ratings for Chardonnay, Pinot Gris and Sauvignon Blanc? Use regression to find coefficient estimates, and then explain these estimates in the space provided below.
+
+*Hint:* You will need to filter the database for the selected varieties and create a new variable that indicates Roger Voss as the taster.
+
+```{r}
+
+```
+
+*Answer:* 
+
+## Bonus (1pt)
+
+Graph the interaction of Roger Voss with Pinot Gris. How does this help with interpretation?
+
+```{r}
+
+```
+
+*Answer:*
+
+## (2pts)
+
+Does including year in a regression of log(price) on points improve the model? Justify your answer using the value of $R^2$ for each model.
+
+```{r}
+
+```
+*Answer:* 
+
+## (5pts)
+Answer the same question, but this time create training and test samples using an 80/20 split. Then use RMSE on the test data to justify your answer. If your answer is different from above, please explain.
+
+```{r}
+
+```
+
+*Answer:*
+
+## Bonus (1pt)
+
+Create a 2d histogram residual plot from a regression of log(price) on points and year. Does it look ok?
+
+```{r}
+
+```
+
+*Answer:* 
