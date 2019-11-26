@@ -142,7 +142,7 @@ wine %>%
 
 Provide a convincing interpretation of the plot from the previous question.
 
-*Answer:*
+*Answer:* Whereas the other raters tend to have similar variance across a range of prices, Roger Voss tends to vary less for lower priced wines and vary more for higher priced wines.
 
 # Regression
 
@@ -193,7 +193,7 @@ d %>%
   geom_point()
 ```
 
-*Answer:*
+*Answer:* It is clear that Roger's hate of Pinot Gris is so severe that he rates other white wines higher out of spite (this is obviously conjecture, but you get the point).
 
 ## (2pts)
 
@@ -229,7 +229,7 @@ get_regression_points(m2, newdata = test) %>%
   summarize(rmse = sqrt(mean(sq_residuals)))
 ```
 
-*Answer:*
+*Answer:* Hmmm... not much of a difference here. Not sure adding year really helps that much.
 
 ## Bonus (1pt)
 
