@@ -10,6 +10,7 @@ output:
     toc_smooth: true
     number_sections: true
     df_print: kable
+    fig_width: 11
 ---
 
 
@@ -146,7 +147,7 @@ Provide a convincing interpretation of the plot from the previous question.
 
 # Regression
 
-## (4pts)
+## (5pts)
 
 Do points affect log(price) more for Chardonnay or Pinot Gris? In addition to running the regressions, please also write your answer in a way a manager can understand.
 
@@ -154,11 +155,14 @@ Do points affect log(price) more for Chardonnay or Pinot Gris? In addition to ru
 library(moderndive)
 
 r1 <- get_regression_table(lm(log(price)~points,data=wine %>% filter(variety == "Chardonnay")))
+r1
 r2 <- get_regression_table(lm(log(price)~points,data=wine %>% filter(variety == "Pinot Gris")))
-
+r2
 ```
 
 *Answer:* Each additional point increases price by `r round((exp(r1$estimate[2])-1)*100)`% for Chardonnay, but only `r round((exp(r2$estimate[2])-1)*100)`% for Pinot Gris.
+
+> round((exp(r2$estimate[2])-1)*100)
 
 ## (5pts)
 
@@ -206,7 +210,7 @@ get_regression_summaries(lm(lprice~points+year, data = d))
 ```
 *Answer:* Yes, the $R^2$ for the model that includes year is higher. 
 
-## (4pts)
+## (5pts)
 Answer the same question, but this time create training and test samples using an 80/20 split. Then use RMSE on the test data to justify your answer. If your answer is different from above, please explain.
 
 ```{r}
