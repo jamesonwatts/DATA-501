@@ -1,4 +1,4 @@
-# GSMDS-5001
+# DATA-501
 
 ## Foundations of Data Science with R
 
